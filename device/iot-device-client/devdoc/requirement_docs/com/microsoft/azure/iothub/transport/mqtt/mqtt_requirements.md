@@ -14,8 +14,7 @@ public final class Mqtt implements MqttCallback
     public Mqtt(String serverURI, String clientId, String userName, String password, IotHubSSLContext iotHubSSLContext) throws IOException;
     public Mqtt() throws IOException;
 
-    abstract String parseTopic() throws IOException;
-    abstract byte[] parsePayload(String topic) throws IOException;
+    Pair<String, byte[]> peekMessage() throws IOException;
 
     private class MqttConnectionInfo
     {
@@ -100,6 +99,8 @@ protected void disconnect() throws IOException;
 ```java
 protected void publish(String publishTopic, byte[] payload) throws IOException;
 ```
+**SRS_Mqtt_99_049: [**If the user supplied SAS token has expired, the function shall throw an IOException.**]**
+
 **SRS_Mqtt_25_012: [**If the MQTT connection is closed, the function shall throw an IOException.**]**
 
 **SRS_Mqtt_25_013: [**If the either publishTopic or payload is null or empty, the function shall throw an IOException.**]**
@@ -121,6 +122,8 @@ protected void subscribe(String topic) throws IOException;
 
 **SRS_Mqtt_25_016: [**If the subscribeTopic is null or empty, the function shall throw an InvalidParameter Exception.**]**
 
+**SRS_Mqtt_99_049: [**If the user supplied SAS token has expired, the function shall throw an IOException.**]**
+
 **SRS_Mqtt_25_048: [**If the Mqtt Client Async throws MqttException for any reason, the function shall throw an IOException with the message.**]**
 
 **SRS_Mqtt_25_017: [**The function shall subscribe to subscribeTopic specified to the IoT Hub given in the configuration.**]**
@@ -134,6 +137,8 @@ protected void unsubscribe(String topic) throws IOException;
 
 **SRS_Mqtt_25_018: [**If the MQTT connection is closed, the function shall throw an IOException with message.**]**
 
+**SRS_Mqtt_99_049: [**If the user supplied SAS token has expired, the function shall throw an IOException.**]**
+
 **SRS_Mqtt_25_019: [**If the unsubscribeTopic is null or empty, the function shall throw an IOException.**]**
 
 **SRS_Mqtt_25_020: [**The function shall unsubscribe from subscribeTopic specified to the IoT Hub given in the configuration.**]**
@@ -145,13 +150,16 @@ protected void unsubscribe(String topic) throws IOException;
 public Message receive() throws IOException;
 ```
 
-**SRS_Mqtt_25_021: [**This method shall call parseTopic to parse the topic from the received Messages queue corresponding to the messaging client's operation.**]**
+**SRS_Mqtt_34_021: [**If the call peekMessage returns null then this method shall do nothing and return null**]**
 
-**SRS_Mqtt_25_022: [**If the call parseTopic returns null or empty string then this method shall do nothing and return null**]**
+**SRS_Mqtt_34_022: [**If the call peekMessage returns a null or empty string then this method shall do nothing and return null**]**
 
-**SRS_Mqtt_25_023: [**This method shall call parsePayload to get the message payload from the recevived Messages queue corresponding to the messaging client's operation.**]**
+**SRS_Mqtt_34_023: [**This method shall call peekMessage to get the message payload from the recevived Messages queue corresponding to the messaging client's operation.**]**
 
-**SRS_Mqtt_25_025: [**If the call to parsePayload returns null when topic is non-null then this method will throw IOException**]**
+**SRS_Mqtt_34_024: [**This method shall construct new Message with the bytes obtained from peekMessage and return the message.**]**
+
+**SRS_Mqtt_34_025: [**If the call to peekMessage returns null when topic is non-null then this method will throw IOException**]**
+
 
 ### connectionLost
 
@@ -159,6 +167,14 @@ public Message receive() throws IOException;
 public void connectionLost(Throwable throwable);
 ```
 **SRS_Mqtt_25_026: [**The function shall notify all its concrete classes by calling abstract method onReconnect at the entry of the function**]**
+
+**SRS_Mqtt_99_050: [**The function shall check if SAS token has already expired.**]**
+
+**SRS_Mqtt_99_051: [**The function shall check if SAS token in based on user supplied SharedAccessKey.**]**
+
+**SRS_Mqtt_99_052: [**The function shall generate a new SAS token.**]**
+
+**SRS_Mqtt_99_053: [**The function shall set user supplied SAS token expiration flag to true.**]**
 
 **SRS_Mqtt_25_027: [**The function shall attempt to reconnect to the IoTHub in a loop with exponential backoff until it succeeds**]**
 
@@ -177,6 +193,7 @@ public void messageArrived(String topic, MqttMessage mqttMessage);
 
 
 ### constructMessage
+
 ```java
 private Message constructMessage(byte[] data, String topic) throws IllegalArgumentException
 ```
@@ -199,35 +216,11 @@ private void assignPropertiesToMessage(Message message, String propertiesString)
 **SRS_Mqtt_34_054: [**A message may have 0 to many custom properties**]**
 
 
-### parseTopic
+
+### peekMessage
 
 ```java
-abstract String parseTopic() throws IOException;
+Pair<String, byte[]> peekMessage() throws IOException;
 ```
 
-**SRS_Mqtt_25_031: [**This abstract method shall be implemeted by the concrete classes.**]**
-
-**SRS_Mqtt_25_032: [**This abstract method shall parse the topic from received message queue corresponding to the concrete classes operation.**]**
-
-**SRS_Mqtt_25_033: [**If none of the topics from the received queue match the concrete classes operation then this method shall return null string .**]**
-
-**SRS_Mqtt_25_034: [**If received messages queue is empty then this method shall return null string in its concrete implementation.**]**
-
-**SRS_Mqtt_25_035: [**If receiveMessage queue is null then this method shall throw IOException.**]**
-
-
-### parsePayload
-
-```java
-abstract byte[] parsePayload(String topic) throws IOException;
-```
-
-**SRS_Mqtt_25_036: [**This abstract method shall be implemeted by the concrete classes.**]**
-
-**SRS_Mqtt_25_037: [**This abstract method look for payload for the corresponding topic from the received messagesqueue in the concrete classes implementation.**]**
-
-**SRS_Mqtt_25_038: [**If the topic is null then this method stop parsing for payload and return.**]**
-
-**SRS_Mqtt_25_039: [**If the topic is non-null and received messagesqueue could not locate the payload then this method shall throw IOException**]**
-
-**SRS_Mqtt_25_040: [**If receiveMessage queue is null then this method shall throw IOException.**]**
+**SRS_Mqtt_34_040: [**If allReceivedMessages queue is null then this method shall throw IOException.**]**

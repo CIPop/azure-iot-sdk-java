@@ -6,14 +6,13 @@ package tests.unit.com.microsoft.azure.sdk.iot.deps.serializer;
 import com.microsoft.azure.sdk.iot.deps.serializer.JobsParser;
 import com.microsoft.azure.sdk.iot.deps.serializer.MethodParser;
 import com.microsoft.azure.sdk.iot.deps.serializer.TwinParser;
-
 import mockit.Deencapsulation;
 import org.junit.Test;
 
+import java.util.Date;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-
-import java.util.Date;
 
 /**
  * Unit tests for jobs serializer
@@ -471,7 +470,7 @@ public class JobsParserTest
                 "{" +
                         "\"jobId\":\"" + jobId + "\"," +
                         "\"type\":\"scheduleUpdateTwin\"," +
-                        "\"cloudToDeviceMethod\":" + twinParser.toJson() + "," +
+                        "\"updateTwin\":" + twinParser.toJson() + "," +
                         "\"queryCondition\":\"" + queryCondition + "\"," +
                         "\"startTime\":\"" + Helpers.formatUTC(startTime) + "\"," +
                         "\"maxExecutionTimeInSeconds\":" + maxExecutionTimeInSeconds +
@@ -481,7 +480,7 @@ public class JobsParserTest
         String json = jobsParser.toJson();
 
         // Assert
-        Helpers.assertJson(json,expectedJson);
+        Helpers.assertJson(json, expectedJson);
     }
 
 }

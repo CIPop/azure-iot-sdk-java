@@ -7,7 +7,6 @@ package com.microsoft.azure.sdk.iot.service.devicetwin;
 
 import com.microsoft.azure.sdk.iot.deps.serializer.TwinParser;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -51,6 +50,7 @@ public class DeviceTwinDevice
 
     /**
      * Getter to get device ID
+     * @return device id for this device
      */
     public String getDeviceId()
     {

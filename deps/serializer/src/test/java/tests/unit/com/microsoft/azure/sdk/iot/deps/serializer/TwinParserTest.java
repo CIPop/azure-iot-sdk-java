@@ -3,7 +3,6 @@
 
 package tests.unit.com.microsoft.azure.sdk.iot.deps.serializer;
 
-
 import com.google.gson.JsonElement;
 import com.microsoft.azure.sdk.iot.deps.serializer.*;
 import mockit.Deencapsulation;
@@ -20,7 +19,7 @@ import static org.junit.Assert.*;
 
 /**
  * Unit tests for TwinParser serializer
- * 95% methods, 95% lines covered
+ * 100% methods, 96% lines covered
  */
 public class TwinParserTest {
 
@@ -64,6 +63,29 @@ public class TwinParserTest {
         public void execute(Map<String , Object> tagsMap)
         {
             diff = tagsMap;
+        }
+    }
+
+    private static void assertTwin(TwinParser twinParser, Map<String, Object> desired, Map<String, Object> reported, Map<String, Object> tags)
+    {
+        if(desired != null)
+        {
+            Helpers.assertMap(twinParser.getDesiredPropertyMap(), desired, null);
+        }
+        if(reported != null)
+        {
+            Helpers.assertMap(twinParser.getReportedPropertyMap(), reported, null);
+        }
+        if(tags != null)
+        {
+            try
+            {
+                Helpers.assertMap(twinParser.getTagsMap(), tags, null);
+            }
+            catch (IOException e)
+            {
+                assertTrue("getTagsMap throws IOException", true);
+            }
         }
     }
 
@@ -252,7 +274,7 @@ public class TwinParserTest {
         String json = twinParser.toJson();
 
         // Assert
-        assertThat(json, is("{\"properties\":{\"desired\":{},\"reported\":{}}}"));
+        Helpers.assertJson(json, "{\"properties\":{\"desired\":{},\"reported\":{}}}");
     }
 
     /* Tests_SRS_TWINPARSER_21_017: [The toJsonElement shall return a JsonElement with information in the TwinParser using json format.] */
@@ -270,7 +292,7 @@ public class TwinParserTest {
         JsonElement jsonElement = twinParser.toJsonElement();
 
         // Assert
-        assertThat(jsonElement.toString(), is("{\"properties\":{\"desired\":{},\"reported\":{}}}"));
+        Helpers.assertJson(jsonElement.toString(), "{\"properties\":{\"desired\":{},\"reported\":{}}}");
     }
 
     /* Tests_SRS_TWINPARSER_21_019: [The enableTags shall enable tags in the twin collection.] */
@@ -286,7 +308,7 @@ public class TwinParserTest {
 
         // Assert
         String json = twinParser.toJson();
-        assertThat(json, is("{\"tags\":{},\"properties\":{\"desired\":{},\"reported\":{}}}"));
+        Helpers.assertJson(json, "{\"tags\":{},\"properties\":{\"desired\":{},\"reported\":{}}}");
     }
 
     /* Tests_SRS_TWINPARSER_21_161: [It tags is already enabled, the enableTags shall not do anything.] */
@@ -302,7 +324,7 @@ public class TwinParserTest {
 
         // Assert
         String json = twinParser.toJson();
-        assertThat(json, is("{\"tags\":{},\"properties\":{\"desired\":{},\"reported\":{}}}"));
+        Helpers.assertJson(json, "{\"tags\":{},\"properties\":{\"desired\":{},\"reported\":{}}}");
     }
 
     /* Tests_SRS_TWINPARSER_21_020: [The enableMetadata shall enable report metadata in Json for the Desired and for the Reported Properties.] */
@@ -317,11 +339,10 @@ public class TwinParserTest {
 
         // Assert
         String json = twinParser.toJson();
-        assertThat(json, is("{\"properties\":{\"desired\":{\"$metadata\":{}},\"reported\":{\"$metadata\":{}}}}"));
+        Helpers.assertJson(json, "{\"properties\":{\"desired\":{\"$metadata\":{}},\"reported\":{\"$metadata\":{}}}}");
     }
 
     /* Tests_SRS_TWINPARSER_21_021: [The updateDesiredProperty shall add all provided properties to the Desired property.] */
-    /* Tests_SRS_TWINPARSER_21_050: [The getDesiredPropertyMap shall return a map with all desired property key value pairs.] */
     /* Tests_SRS_TWINPARSER_21_156: [A valid `value` shall contains types of boolean, number, string, or object.] */
     @Test
     public void updateDesiredPropertySucceed()
@@ -341,16 +362,166 @@ public class TwinParserTest {
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value1\",\"key2\":1234,\"keyBool\":false,\"keyChar\":\"c\",\"keyString\":\"value3\",\"keyEnum\":\"val1\",\"keyDouble\":1234.456}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(7));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("keyString").toString(), is("value3"));
-        assertThat(Boolean.parseBoolean(result.get("keyBool").toString()), is(false));
-        assertThat(Double.parseDouble(result.get("keyDouble").toString()), is(1234.456));
-        assertThat(result.get("keyChar").toString(), is("c"));
-        assertThat(myEnum.valueOf(result.get("keyEnum").toString()), is(myEnum.val1));
+        Helpers.assertJson(json, "{\"key1\":\"value1\",\"key2\":1234,\"keyBool\":false,\"keyChar\":\"c\",\"keyString\":\"value3\",\"keyEnum\":\"val1\",\"keyDouble\":1234.456}");
+        assertTwin(twinParser, newValues, null, null);
+    }
+
+    /* Tests_SRS_TWINPARSER_21_050: [The getDesiredPropertyMap shall return a map with all desired property key value pairs.] */
+    @Test
+    public void getDesiredPropertyMapSucceed()
+    {
+        // Arrange
+        TwinParser twinParser = new TwinParser();
+        String json = "{\n" +
+                "  \"deviceId\": \"149933hgt335\",\n" +
+                "  \"etag\": \"AAAA22AAAAE=\",\n" +
+                "  \"properties\": {\n" +
+                "    \"desired\": {\n" +
+                "        \"sensors\": {\n" +
+                "          \"sensor0\": \"10\",\n" +
+                "          \"sensor1\": \"11\"\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"reported\": {\n" +
+                "        \"sensors\": {\n" +
+                "          \"sensor4\": \"4\",\n" +
+                "          \"sensor5\": \"5\",\n" +
+                "          \"sensor2\": \"2\",\n" +
+                "          \"sensor3\": \"3\",\n" +
+                "          \"sensor8\": \"8\",\n" +
+                "          \"sensor9\": \"9\",\n" +
+                "          \"sensor6\": \"6\",\n" +
+                "          \"sensor7\": \"7\",\n" +
+                "          \"sensor0\": \"0\",\n" +
+                "          \"sensor1\": \"1\"\n" +
+                "        }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"$version\": 2\n" +
+                "}";
+        twinParser.updateTwin(json);
+
+        // Act
+        Map<String, Object> resultValues = twinParser.getDesiredPropertyMap();
+
+        // Assert
+        Map<String, Object> expectedValues = new HashMap<String, Object>()
+        {
+            {
+                put("sensors", new HashMap<String, Object>()
+                {
+                    {
+                        put("sensor0", "10");
+                        put("sensor1", "11");
+                    }
+                });
+            }
+        };
+        Helpers.assertMap(resultValues, expectedValues, null);
+    }
+
+    /* Tests_SRS_TWINPARSER_21_051: [The getReportedPropertyMap shall return a map with all reported property key value pairs.] */
+    @Test
+    public void getReportedPropertyMapSucceed()
+    {
+        // Arrange
+        TwinParser twinParser = new TwinParser();
+        String json = "{\n" +
+                "  \"deviceId\": \"149933hgt335\",\n" +
+                "  \"etag\": \"AAAA22AAAAE=\",\n" +
+                "  \"properties\": {\n" +
+                "    \"desired\": {\n" +
+                "        \"sensors\": {\n" +
+                "          \"sensor0\": \"10\",\n" +
+                "          \"sensor1\": \"11\"\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"reported\": {\n" +
+                "        \"sensors\": {\n" +
+                "          \"sensor4\": \"4\",\n" +
+                "          \"sensor5\": \"5\",\n" +
+                "          \"sensor2\": \"2\",\n" +
+                "          \"sensor3\": \"3\",\n" +
+                "          \"sensor8\": \"8\",\n" +
+                "          \"sensor9\": \"9\",\n" +
+                "          \"sensor6\": \"6\",\n" +
+                "          \"sensor7\": \"7\",\n" +
+                "          \"sensor0\": \"0\",\n" +
+                "          \"sensor1\": \"1\"\n" +
+                "        }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"$version\": 2\n" +
+                "}";
+        twinParser.updateTwin(json);
+
+        // Act
+        Map<String, Object> resultValues = twinParser.getReportedPropertyMap();
+
+        // Assert
+        Map<String, Object> expectedValues = new HashMap<String, Object>()
+        {
+            {
+                put("sensors", new HashMap<String, Object>()
+                {
+                    {
+                        put("sensor0", "0");
+                        put("sensor1", "1");
+                        put("sensor2", "2");
+                        put("sensor3", "3");
+                        put("sensor4", "4");
+                        put("sensor5", "5");
+                        put("sensor6", "6");
+                        put("sensor7", "7");
+                        put("sensor8", "8");
+                        put("sensor9", "9");
+                    }
+                });
+            }
+        };
+        Helpers.assertMap(resultValues, expectedValues, null);
+    }
+
+    /* Tests_SRS_TWINPARSER_21_052: [The getTagsMap shall return a map with all tags in the collection.] */
+    @Test
+    public void getTagsMapSucceed() throws IOException
+    {
+        // Arrange
+        TwinParser twinParser = new TwinParser();
+        twinParser.enableTags();
+        String json = "{\n" +
+                "  \"deviceId\": \"149933hgt335\",\n" +
+                "  \"etag\": \"AAAA22AAAAE=\",\n" +
+                "  \"tags\":{\n" +
+                "    \"tag1\":{\"Key1\":\"newValue1\",\"KEY3\":\"value3\"}" +
+                "  },\n" +
+                "  \"properties\": {\n" +
+                "    \"desired\": {\n" +
+                "    },\n" +
+                "    \"reported\": {\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"$version\": 2\n" +
+                "}";
+        twinParser.updateTwin(json);
+
+        // Act
+        Map<String, Object> resultValues = twinParser.getTagsMap();
+
+        // Assert
+        Map<String, Object> expectedValues = new HashMap<String, Object>()
+        {
+            {
+                put("tag1", new HashMap<String, Object>()
+                {
+                    {
+                        put("Key1", "newValue1");
+                        put("KEY3", "value3");
+                    }
+                });
+            }
+        };
+        Helpers.assertMap(resultValues, expectedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_073: [If the map is invalid, the updateDesiredProperty shall throw IllegalArgumentException.] */
@@ -360,15 +531,15 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        newValues.put("key7", false);
-        newValues.put("key8", 1234.456);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        oldValues.put("key7", false);
+        oldValues.put("key8", 1234.456);
+        twinParser.updateDesiredProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("validKey", "value");
         newValues.put("key1", "value4");
         newValues.put(null, "value");
@@ -387,13 +558,7 @@ public class TwinParserTest {
 
         // Assert
         Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(5));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(Double.parseDouble(result.get("key8").toString()), is(1234.456));
-        assertThat(result.get("key3").toString(), is("value3"));
-        assertThat(result.get("key7").toString(), is("false"));
-        assertNull(result.get("validKey"));
+        assertTwin(twinParser, oldValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_073: [If the map is invalid, the updateDesiredProperty shall throw IllegalArgumentException.] */
@@ -408,9 +573,7 @@ public class TwinParserTest {
         newValues.put("", "value");
 
         // Act
-        String json = twinParser.updateDesiredProperty(newValues);
-
-        // Assert
+        twinParser.updateDesiredProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_073: [If the map is invalid, the updateDesiredProperty shall throw IllegalArgumentException.] */
@@ -425,9 +588,7 @@ public class TwinParserTest {
         newValues.put(BIG_STRING_150CHARS, "value");
 
         // Act
-        String json = twinParser.updateDesiredProperty(newValues);
-
-        // Assert
+        twinParser.updateDesiredProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_073: [If the map is invalid, the updateDesiredProperty shall throw IllegalArgumentException.] */
@@ -442,9 +603,7 @@ public class TwinParserTest {
         newValues.put(ILLEGAL_STRING_SPACE, "value");
 
         // Act
-        String json = twinParser.updateDesiredProperty(newValues);
-
-        // Assert
+        twinParser.updateDesiredProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_073: [If the map is invalid, the updateDesiredProperty shall throw IllegalArgumentException.] */
@@ -459,9 +618,7 @@ public class TwinParserTest {
         newValues.put(ILLEGAL_STRING_DOT, "value");
 
         // Act
-        String json = twinParser.updateDesiredProperty(newValues);
-
-        // Assert
+        twinParser.updateDesiredProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_073: [If the map is invalid, the updateDesiredProperty shall throw IllegalArgumentException.] */
@@ -476,9 +633,7 @@ public class TwinParserTest {
         newValues.put(ILLEGAL_STRING_DOLLAR, "value");
 
         // Act
-        String json = twinParser.updateDesiredProperty(newValues);
-
-        // Assert
+        twinParser.updateDesiredProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_156: [A valid `value` shall contains types of boolean, number, string, or object.] */
@@ -498,9 +653,7 @@ public class TwinParserTest {
         newValues.put("key2", new Bar());
 
         // Act
-        String json = twinParser.updateDesiredProperty(newValues);
-
-        // Assert
+        twinParser.updateDesiredProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_158: [A valid `value` shall contains less than 5 levels of sub-maps.] */
@@ -526,15 +679,13 @@ public class TwinParserTest {
         }});
 
         // Act
-        String json = twinParser.updateDesiredProperty(newValues);
-
-        // Assert
+        twinParser.updateDesiredProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_157: [A valid `value` can contains sub-maps.] */
     /* Tests_SRS_TWINPARSER_21_158: [A valid `value` shall contains less than 5 levels of sub-maps.] */
     @Test
-    public void updateDesiredProperty_5levelsSucceed()
+    public void updateDesiredProperty5levelsSucceed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -556,11 +707,11 @@ public class TwinParserTest {
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-
-        // TODO:Implement test for property with multiple level.
+        Helpers.assertJson(json, "{\"key1\":\"value\",\"one\":{\"two\":{\"three\":{\"four\":{\"five\":{\"propertyKey\":\"value\"}}}}}}");
+        assertTwin(twinParser, newValues, null, null);
     }
 
-    /* Tests_SRS_TWINPARSER_21_078: [If any `value` is null, the updateDesiredProperty shall store it but do not report on Json.] */
+    /* Tests_SRS_TWINPARSER_21_078: [If any `value` is null, the updateDesiredProperty shall delete it from the collection and report on Json.] */
     @Test
     public void updateDesiredPropertyNullValuesSucceed()
     {
@@ -574,11 +725,34 @@ public class TwinParserTest {
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        assertNull(json);
+        Helpers.assertJson(json, "{\"key1\":null,\"key2\":null}");
         Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(2));
-        assertNull(result.get("key1"));
-        assertNull(result.get("key2"));
+        assertNull(result);
+    }
+
+    /* Tests_SRS_TWINPARSER_21_078: [If any `value` is null, the updateDesiredProperty shall delete it from the collection and report on Json.] */
+    @Test
+    public void updateDesiredPropertyDeleteValuesSucceed()
+    {
+        // Arrange
+        TwinParser twinParser = new TwinParser();
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", "value2");
+        twinParser.updateDesiredProperty(oldValues);
+        assertTwin(twinParser, oldValues, null, null);
+
+        Map<String, Object> newValues = new HashMap<>();
+        newValues.put("key1", null);    //delete key1
+
+        oldValues.remove("key1");
+
+        // Act
+        String json = twinParser.updateDesiredProperty(newValues);
+
+        // Assert
+        Helpers.assertJson(json, "{\"key1\":null}");
+        assertTwin(twinParser, oldValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_079: [If the map is invalid, the updateReportedProperty shall throw IllegalArgumentException.] */
@@ -593,9 +767,7 @@ public class TwinParserTest {
         newValues.put(null, "value");
 
         // Act
-        String json = twinParser.updateReportedProperty(newValues);
-
-        // Assert
+        twinParser.updateReportedProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_079: [If the map is invalid, the updateReportedProperty shall throw IllegalArgumentException.] */
@@ -610,9 +782,7 @@ public class TwinParserTest {
         newValues.put("", "value");
 
         // Act
-        String json = twinParser.updateReportedProperty(newValues);
-
-        // Assert
+        twinParser.updateReportedProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_079: [If the map is invalid, the updateReportedProperty shall throw IllegalArgumentException.] */
@@ -627,15 +797,13 @@ public class TwinParserTest {
         newValues.put(BIG_STRING_150CHARS, "value");
 
         // Act
-        String json = twinParser.updateReportedProperty(newValues);
-
-        // Assert
+        twinParser.updateReportedProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_079: [If the map is invalid, the updateReportedProperty shall throw IllegalArgumentException.] */
     /* Tests_SRS_TWINPARSER_21_155: [A valid `key` shall not have an illegal character (`$`,`.`, space).] */
     @Test (expected = IllegalArgumentException.class)
-    public void updateReportedProperty_IllegalSpaceKeyFailed()
+    public void updateReportedPropertyIllegalSpaceKeyFailed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -644,15 +812,13 @@ public class TwinParserTest {
         newValues.put(ILLEGAL_STRING_SPACE, "value");
 
         // Act
-        String json = twinParser.updateReportedProperty(newValues);
-
-        // Assert
+        twinParser.updateReportedProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_079: [If the map is invalid, the updateReportedProperty shall throw IllegalArgumentException.] */
     /* Tests_SRS_TWINPARSER_21_155: [A valid `key` shall not have an illegal character (`$`,`.`, space).] */
     @Test (expected = IllegalArgumentException.class)
-    public void updateReportedProperty_IllegalDotKeyFailed()
+    public void updateReportedPropertyIllegalDotKeyFailed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -661,15 +827,13 @@ public class TwinParserTest {
         newValues.put(ILLEGAL_STRING_DOT, "value");
 
         // Act
-        String json = twinParser.updateReportedProperty(newValues);
-
-        // Assert
+        twinParser.updateReportedProperty(newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_079: [If the map is invalid, the updateReportedProperty shall throw IllegalArgumentException.] */
     /* Tests_SRS_TWINPARSER_21_155: [A valid `key` shall not have an illegal character (`$`,`.`, space).] */
     @Test (expected = IllegalArgumentException.class)
-    public void updateReportedProperty_IllegalDollarKeyFailed()
+    public void updateReportedPropertyIllegalDollarKeyFailed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -678,12 +842,10 @@ public class TwinParserTest {
         newValues.put(ILLEGAL_STRING_DOLLAR, "value");
 
         // Act
-        String json = twinParser.updateReportedProperty(newValues);
-
-        // Assert
+        twinParser.updateReportedProperty(newValues);
     }
 
-    /* Tests_SRS_TWINPARSER_21_084: [If any `value` is null, the updateReportedProperty shall store it but do not report on Json.] */
+    /* Tests_SRS_TWINPARSER_21_084: [If any `value` is null, the updateReportedProperty shall delete it from the collection and report on Json.] */
     @Test
     public void updateReportedPropertyNullValuesSucceed()
     {
@@ -697,11 +859,34 @@ public class TwinParserTest {
         String json = twinParser.updateReportedProperty(newValues);
 
         // Assert
-        assertNull(json);
+        Helpers.assertJson(json, "{\"key1\":null,\"key2\":null}");
         Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(2));
-        assertNull(result.get("key1"));
-        assertNull(result.get("key2"));
+        assertNull(result);
+    }
+
+    /* Tests_SRS_TWINPARSER_21_084: [If any `value` is null, the updateReportedProperty shall delete it from the collection and report on Json.] */
+    @Test
+    public void updateReportedPropertyDeleteValuesSucceed()
+    {
+        // Arrange
+        TwinParser twinParser = new TwinParser();
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", "value2");
+        twinParser.updateReportedProperty(oldValues);
+        assertTwin(twinParser, null, oldValues, null);
+
+        Map<String, Object> newValues = new HashMap<>();
+        newValues.put("key1", null);    //delete key1
+
+        oldValues.remove("key1");
+
+        // Act
+        String json = twinParser.updateReportedProperty(newValues);
+
+        // Assert
+        Helpers.assertJson(json, "{\"key1\":null}");
+        assertTwin(twinParser, null, oldValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_021: [The updateDesiredProperty shall add all provided properties to the Desired property.] */
@@ -729,17 +914,13 @@ public class TwinParserTest {
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        TwinParser resultJson = new TwinParser();
-        resultJson.updateDesiredProperty(json);
+        Helpers.assertJson(json, "{\"key1\":\"value1\",\"key2\":1234,\"key3\":\"value3\"}");
+        assertTwin(twinParser, newValues, null, null);
         TwinProperties resultProperties = Deencapsulation.getField(twinParser, "properties");
         TwinProperty resultDesired = Deencapsulation.getField(resultProperties, "desired");
         TwinMetadata resultMetadataKey1 = (TwinMetadata)Deencapsulation.invoke(resultDesired, "getMetadata", "key1");
         TwinMetadata resultMetadataKey2 = (TwinMetadata)Deencapsulation.invoke(resultDesired, "getMetadata", "key2");
         TwinMetadata resultMetadataKey3 = (TwinMetadata)Deencapsulation.invoke(resultDesired, "getMetadata", "key3");
-        assertThat((Integer)Deencapsulation.invoke(resultDesired, "size"), is(3));
-        assertThat(Deencapsulation.invoke(resultDesired, "get", "key1").toString(), is("value1"));
-        assertThat((Integer)Deencapsulation.invoke(resultDesired, "get", "key2"), is(1234));
-        assertThat(Deencapsulation.invoke(resultDesired, "get", "key3").toString(), is("value3"));
 
         TwinProperties properties = Deencapsulation.getField(twinParser, "properties");
         TwinProperty originJson = Deencapsulation.getField(properties, "desired");
@@ -758,17 +939,11 @@ public class TwinParserTest {
                 is(Deencapsulation.invoke(originMetadataKey2, "getLastUpdate")));
         assertThat(Deencapsulation.invoke(resultMetadataKey3, "getLastUpdate"),
                 is(Deencapsulation.invoke(originMetadataKey3, "getLastUpdate")));
-
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
     }
 
     /* Tests_SRS_TWINPARSER_21_022: [The updateDesiredProperty shall return a string with json representing the desired properties with changes.] */
     @Test
-    public void updateDesiredProperty_OnlyMetadataChangesSucceed()
+    public void updateDesiredPropertyOnlyMetadataChangesSucceed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -792,17 +967,13 @@ public class TwinParserTest {
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        TwinParser resultJson = new TwinParser();
-        resultJson.updateDesiredProperty(json);
+        Helpers.assertJson(json, "{\"key1\":\"value1\",\"key2\":1234,\"key3\":\"value3\"}");
+        assertTwin(twinParser, newValues, null, null);
         TwinProperties resultProperties = Deencapsulation.getField(twinParser, "properties");
         TwinProperty resultDesired = Deencapsulation.getField(resultProperties, "desired");
         TwinMetadata resultMetadataKey1 = (TwinMetadata)Deencapsulation.invoke(resultDesired, "getMetadata", "key1");
         TwinMetadata resultMetadataKey2 = (TwinMetadata)Deencapsulation.invoke(resultDesired, "getMetadata", "key2");
         TwinMetadata resultMetadataKey3 = (TwinMetadata)Deencapsulation.invoke(resultDesired, "getMetadata", "key3");
-        assertThat((Integer)Deencapsulation.invoke(resultDesired, "size"), is(3));
-        assertThat(Deencapsulation.invoke(resultDesired, "get", "key1").toString(), is("value1"));
-        assertThat((Integer)Deencapsulation.invoke(resultDesired, "get", "key2"), is(1234));
-        assertThat(Deencapsulation.invoke(resultDesired, "get", "key3").toString(), is("value3"));
 
         TwinProperties properties = Deencapsulation.getField(twinParser, "properties");
         TwinProperty originJson = Deencapsulation.getField(properties, "desired");
@@ -821,12 +992,6 @@ public class TwinParserTest {
                 is(Deencapsulation.invoke(originMetadataKey2, "getLastUpdate")));
         assertThat(Deencapsulation.invoke(resultMetadataKey3, "getLastUpdate"),
                 is(Deencapsulation.invoke(originMetadataKey3, "getLastUpdate")));
-
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
     }
 
     /* Tests_SRS_TWINPARSER_21_022: [The updateDesiredProperty shall return a string with json representing the desired properties with changes.] */
@@ -835,26 +1000,23 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateDesiredProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key4", "value4");
+
+        oldValues.put("key4", "value4");
 
         // Act
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key4\":\"value4\"}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-        assertThat(result.get("key4").toString(), is("value4"));
+        Helpers.assertJson(json, "{\"key4\":\"value4\"}");
+        assertTwin(twinParser, oldValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_022: [The updateDesiredProperty shall return a string with json representing the desired properties with changes.] */
@@ -865,25 +1027,22 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateDesiredProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", "value4");
+        oldValues.put("key1", "value4");
 
         // Act
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\"}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\"}");
+        assertTwin(twinParser, oldValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_061: [All `key` and `value` in property shall be case sensitive.] */
@@ -892,53 +1051,46 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateDesiredProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", "value4");
         newValues.put("kEy1", "value1");
+        oldValues.put("key1", "value4");
+        oldValues.put("kEy1", "value1");
 
         // Act
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\",\"kEy1\":\"value1\"}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(result.get("kEy1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"kEy1\":\"value1\"}");
+        assertTwin(twinParser, oldValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_063: [If the provided `property` map is empty, the updateDesiredProperty shall not change the collection and return null.] */
     @Test
-    public void updateDesiredPropertyEmptyMapSucceed()
+    public void updateDesiredPropertyUpdateExistedValuesWithEmptyMapSucceed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateDesiredProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
 
         // Act
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
         assertNull(json);
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, oldValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_022: [The updateDesiredProperty shall return a string with json representing the desired properties with changes.] */
@@ -947,28 +1099,25 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateDesiredProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", "value4");
         newValues.put("key2", 1234);
         newValues.put("key5", "value5");
+        oldValues.put("key1", "value4");
+        oldValues.put("key5", "value5");
 
         // Act
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\",\"key5\":\"value5\"}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-        assertThat(result.get("key5").toString(), is("value5"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"key5\":\"value5\"}");
+        assertTwin(twinParser, oldValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_022: [The updateDesiredProperty shall return a string with json representing the desired properties with changes.] */
@@ -977,32 +1126,29 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
+        Map<String, Object> reportedValues = new HashMap<>();
+        reportedValues.put("key1", "value1");
+        reportedValues.put("key2", 1234);
+        reportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(reportedValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key6", "value6");
+        oldValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key1", "value1");
-        newValues.put("key6", "value6");
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
         newValues.put("key1", "value4");
         newValues.put("key6", "value6");
         newValues.put("key5", "value5");
+        oldValues.put("key1", "value4");
+        oldValues.put("key5", "value5");
 
         // Act
         String json = twinParser.updateDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\",\"key5\":\"value5\"}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(result.get("key5").toString(), is("value5"));
-        assertThat(result.get("key6").toString(), is("value6"));
-        assertThat(result.get("key7").toString(), is("true"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"key5\":\"value5\"}");
+        assertTwin(twinParser, oldValues, reportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_023: [If the provided `property` map is null, the updateDesiredProperty shall not change the collection and throw IllegalArgumentException.] */
@@ -1011,17 +1157,14 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
 
         // Act
         twinParser.updateDesiredProperty((Map)null);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_024: [If no Desired property changed its value, the updateDesiredProperty shall return null.] */
     @Test
-    public void updateDesiredPropertyEmptyMapFailed()
+    public void updateDesiredPropertyEmptyMapSucceed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -1053,11 +1196,7 @@ public class TwinParserTest {
 
         // Assert
         assertNull(json);
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, newValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_120: [The resetDesiredProperty shall cleanup the desired collection and add all provided properties to the Desired property.] */
@@ -1082,12 +1221,8 @@ public class TwinParserTest {
         String json = twinParser.resetDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\",\"key2\":1234,\"key5\":\"value5\"}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key5").toString(), is("value5"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"key2\":1234,\"key5\":\"value5\"}");
+        assertTwin(twinParser, newValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_122: [If the provided `propertyMap` is null, the resetDesiredProperty shall not change the collection and throw IllegalArgumentException.] */
@@ -1115,10 +1250,7 @@ public class TwinParserTest {
 
         // Assert
         Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, newValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_123: [The `key` and `value` in property shall be case sensitive.] */
@@ -1142,12 +1274,8 @@ public class TwinParserTest {
         String json = twinParser.resetDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"vAlUE1\",\"key2\":1234,\"kEy1\":\"value5\"}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("vAlUE1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("kEy1").toString(), is("value5"));
+        Helpers.assertJson(json, "{\"key1\":\"vAlUE1\",\"key2\":1234,\"kEy1\":\"value5\"}");
+        assertTwin(twinParser, newValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_124: [If the provided `propertyMap` is empty, the resetDesiredProperty shall cleanup the desired collection and return `{}`.] */
@@ -1167,7 +1295,7 @@ public class TwinParserTest {
         String json = twinParser.resetDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{}"));
+        Helpers.assertJson(json, "{}");
         assertNull(twinParser.getDesiredPropertyMap());
     }
 
@@ -1183,13 +1311,13 @@ public class TwinParserTest {
         }
 
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateDesiredProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", "value4");
         newValues.put("key2", 1234);
         newValues.put("key5", new Bar());
@@ -1207,25 +1335,22 @@ public class TwinParserTest {
 
         // Assert
         Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, oldValues, null, null);
     }
 
-    /* Tests_SRS_TWINPARSER_21_129: [If any `value` is null, the resetDesiredProperty shall store it but do not report on Json.] */
+    /* Tests_SRS_TWINPARSER_21_129: [If any `value` is null, the resetDesiredProperty shall delete it from the collection and report on Json.] */
     @Test
     public void resetDesiredPropertyValueNullSucceed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateDesiredProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", "value4");
         newValues.put("key2", null);
         newValues.put("key5", null);
@@ -1234,12 +1359,10 @@ public class TwinParserTest {
         String json = twinParser.resetDesiredProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\"}"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertNull(result.get("key2"));
-        assertNull(result.get("key5"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"key2\":null,\"key5\":null}");
+        newValues.remove("key2");
+        newValues.remove("key5");
+        assertTwin(twinParser, newValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_130: [The resetReportedProperty shall cleanup the reported collection and add all provided properties to the Reported property.] */
@@ -1264,12 +1387,8 @@ public class TwinParserTest {
         String json = twinParser.resetReportedProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\",\"key2\":1234,\"key5\":\"value5\"}"));
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key5").toString(), is("value5"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"key2\":1234,\"key5\":\"value5\"}");
+        assertTwin(twinParser, null, newValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_132: [If the provided `propertyMap` is null, the resetReportedProperty shall not change the collection and throw IllegalArgumentException.] */
@@ -1297,10 +1416,7 @@ public class TwinParserTest {
 
         // Assert
         Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, null, newValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_133: [The `key` and `value` in property shall be case sensitive.] */
@@ -1309,13 +1425,13 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", "vAlUE1");
         newValues.put("key2", 1234);
         newValues.put("kEy1", "value5");
@@ -1324,12 +1440,8 @@ public class TwinParserTest {
         String json = twinParser.resetReportedProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"vAlUE1\",\"key2\":1234,\"kEy1\":\"value5\"}"));
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("vAlUE1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("kEy1").toString(), is("value5"));
+        Helpers.assertJson(json, "{\"key1\":\"vAlUE1\",\"key2\":1234,\"kEy1\":\"value5\"}");
+        assertTwin(twinParser, null, newValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_134: [If the provided `propertyMap` is empty, the resetReportedProperty shall cleanup the reported collection and return `{}`.] */
@@ -1349,7 +1461,7 @@ public class TwinParserTest {
         String json = twinParser.resetReportedProperty(newValues);
 
         // Assert
-        assertThat(json, is("{}"));
+        Helpers.assertJson(json, "{}");
         assertNull(twinParser.getReportedPropertyMap());
     }
 
@@ -1365,13 +1477,13 @@ public class TwinParserTest {
         }
 
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", "value4");
         newValues.put("key2", 1234);
         newValues.put("key5", new Bar());
@@ -1389,13 +1501,10 @@ public class TwinParserTest {
 
         // Assert
         Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, null, oldValues, null);
     }
 
-    /* Tests_SRS_TWINPARSER_21_139: [If any `value` is null, the resetReportedProperty shall store it but do not report on Json.] */
+    /* Tests_SRS_TWINPARSER_21_139: [If any `value` is null, the resetReportedProperty shall delete it from the collection and report on Json.] */
     @Test
     public void resetReportedPropertyValueNullSucceed()
     {
@@ -1416,16 +1525,13 @@ public class TwinParserTest {
         String json = twinParser.resetReportedProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\"}"));
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertNull(result.get("key2"));
-        assertNull(result.get("key5"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"key2\":null,\"key5\":null} ");
+        newValues.remove("key2");
+        newValues.remove("key5");
+        assertTwin(twinParser, null, newValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_025: [The updateReportedProperty shall add all provided properties to the Reported property.] */
-    /* Tests_SRS_TWINPARSER_21_051: [The getReportedPropertyMap shall return a map with all reported property key value pairs.] */
     @Test
     public void updateReportedPropertySucceed()
     {
@@ -1440,12 +1546,8 @@ public class TwinParserTest {
         String json = twinParser.updateReportedProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value1\",\"key2\":1234,\"key3\":\"value3\"}"));
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        Helpers.assertJson(json, "{\"key1\":\"value1\",\"key2\":1234,\"key3\":\"value3\"}");
+        assertTwin(twinParser, null, newValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_026: [The updateReportedProperty shall return a string with json representing the Reported properties with changes.] */
@@ -1456,28 +1558,25 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", 898989);
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", 898989);
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", 7654);
         newValues.put("key2", 1234);
         newValues.put("key5", "value5");
+        oldValues.put("key1", 7654);
+        oldValues.put("key5", "value5");
 
         // Act
         String json = twinParser.updateReportedProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":7654,\"key5\":\"value5\"}"));
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(Double.parseDouble(result.get("key1").toString()), is(7654.0));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-        assertThat(result.get("key5").toString(), is("value5"));
+        Helpers.assertJson(json, "{\"key1\":7654,\"key5\":\"value5\"}");
+        assertTwin(twinParser, null, oldValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_062: [All `key` and `value` in property shall be case sensitive.] */
@@ -1486,27 +1585,24 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("key1", "value4");
         newValues.put("kEy1", "value1");
+        oldValues.put("key1", "value4");
+        oldValues.put("kEy1", "value1");
 
         // Act
         String json = twinParser.updateReportedProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\",\"kEy1\":\"value1\"}"));
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(result.get("kEy1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"kEy1\":\"value1\"}");
+        assertTwin(twinParser, null, oldValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_064: [If the provided `property` map is empty, the updateReportedProperty shall not change the collection and return null.] */
@@ -1515,24 +1611,20 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
 
         // Act
         String json = twinParser.updateReportedProperty(newValues);
 
         // Assert
         assertNull(json);
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, null, oldValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_026: [The updateReportedProperty shall return a string with json representing the Reported properties with changes.] */
@@ -1541,32 +1633,29 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("key1", "value1");
+        oldValues.put("key2", 1234);
+        oldValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldValues);
+        Map<String, Object> desiredValues = new HashMap<>();
+        desiredValues.put("key1", "value4");
+        desiredValues.put("key6", "value6");
+        desiredValues.put("key7", "value7");
+        twinParser.updateDesiredProperty(desiredValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key1", "value4");
-        newValues.put("key6", "value6");
-        newValues.put("key7", "value7");
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
         newValues.put("key1", "value4");
         newValues.put("key2", 1234);
         newValues.put("key5", "value5");
+        oldValues.put("key1", "value4");
+        oldValues.put("key5", "value5");
 
         // Act
         String json = twinParser.updateReportedProperty(newValues);
 
         // Assert
-        assertThat(json, is("{\"key1\":\"value4\",\"key5\":\"value5\"}"));
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-        assertThat(result.get("key5").toString(), is("value5"));
+        Helpers.assertJson(json, "{\"key1\":\"value4\",\"key5\":\"value5\"}");
+        assertTwin(twinParser, desiredValues, oldValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_027: [If the provided `property` map is null, the updateReportedProperty shall not change the collection and throw IllegalArgumentException.] */
@@ -1578,8 +1667,6 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateReportedProperty((Map)null);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_028: [If no Reported property changed its value, the updateReportedProperty shall return null.] */
@@ -1640,8 +1727,6 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateReportedProperty(json);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_034: [The updateReportedProperty shall update the Reported property using the information provided in the json.] */
@@ -1845,12 +1930,7 @@ public class TwinParserTest {
 
         // Assert
         assertNull(onReportedCallback.diff);
-
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, null, newValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_005: [The constructor shall call the standard constructor.] */
@@ -1894,12 +1974,12 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
+        Map<String, Object> reportedValues = new HashMap<>();
+        reportedValues.put("key1", "value1");
+        reportedValues.put("key2", 1234);
+        reportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(reportedValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
         newValues.put("key1", "value4");
         newValues.put("key2", 1234);
         newValues.put("key6", "value6");
@@ -1918,13 +1998,9 @@ public class TwinParserTest {
         assertThat(onDesiredCallback.diff.size(), is(2));
         assertThat(Double.parseDouble(onDesiredCallback.diff.get("key2").toString()), is(4321.0));
         assertThat(onDesiredCallback.diff.get("key5").toString(), is("value5"));
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(5));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(4321.0));
-        assertThat(result.get("key5").toString(), is("value5"));
-        assertThat(result.get("key6").toString(), is("value6"));
-        assertThat(result.get("key7").toString(), is("true"));
+        newValues.put("key2", 4321.0);
+        newValues.put("key5", "value5");
+        assertTwin(twinParser, newValues, reportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_096: [If the provided json have any duplicated `key`, the updateDesiredProperty shall throws IllegalArgumentException.] */
@@ -1933,12 +2009,12 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
+        Map<String, Object> reportedValues = new HashMap<>();
+        reportedValues.put("key1", "value1");
+        reportedValues.put("key2", 1234);
+        reportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(reportedValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
         newValues.put("key1", "value4");
         newValues.put("key2", 1234);
         newValues.put("key6", "value6");
@@ -1973,12 +2049,7 @@ public class TwinParserTest {
         /**
          * Shall not change any value.
          */
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key6").toString(), is("value6"));
-        assertThat(result.get("key7").toString(), is("true"));
+        assertTwin(twinParser, newValues, reportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_032: [If the OnDesiredCallback is set as null, the updateDesiredProperty shall discard the map with the changed pairs.] */
@@ -2023,11 +2094,7 @@ public class TwinParserTest {
         // Assert
         assertNull(onDesiredCallback.diff);
 
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, newValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_092: [If the provided json is not valid, the updateDesiredProperty shall throws IllegalArgumentException.] */
@@ -2048,8 +2115,6 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateDesiredProperty(json);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_065: [If the provided json is empty, the updateDesiredProperty shall not change the collection and not call the OnDesiredCallback.] */
@@ -2074,16 +2139,12 @@ public class TwinParserTest {
         // Assert
         assertNull(onDesiredCallback.diff);
 
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, newValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_066: [If the provided json is null, the updateDesiredProperty shall not change the collection, not call the OnDesiredCallback, and throws IllegalArgumentException.] */
     @Test
-    public void updateDesiredPropertyJsonNullSucceed()
+    public void updateDesiredPropertyJsonNullFailed()
     {
         // Arrange
         OnDesiredCallback onDesiredCallback = new OnDesiredCallback();
@@ -2111,11 +2172,7 @@ public class TwinParserTest {
         // Assert
         assertNull(onDesiredCallback.diff);
 
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, newValues, null, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_159: [The updateDeviceManager shall replace the `deviceId` by the provided one.] */
@@ -2130,14 +2187,14 @@ public class TwinParserTest {
         String json = twinParser.updateDeviceManager("DeviceName", null, null);
 
         // Assert
-        assertThat(json, is(
+        Helpers.assertJson(json, 
                 "{" +
                         "\"deviceId\":\"DeviceName\"," +
                         "\"properties\":{" +
                                 "\"desired\":{}," +
                                 "\"reported\":{}" +
                         "}" +
-                "}"));
+                "}");
 
         assertThat(twinParser.getDeviceId(), is("DeviceName"));
         assertNull(twinParser.getGenerationId());
@@ -2162,14 +2219,14 @@ public class TwinParserTest {
         String json = twinParser.updateDeviceManager("Device_Name", null, null);
 
         // Assert
-        assertThat(json, is(
+        Helpers.assertJson(json, 
                 "{" +
                         "\"deviceId\":\"Device_Name\"," +
                         "\"properties\":{" +
                         "\"desired\":{}," +
                         "\"reported\":{}" +
                         "}" +
-                        "}"));
+                        "}");
 
         assertThat(twinParser.getDeviceId(), is("Device_Name"));
         assertNull(twinParser.getGenerationId());
@@ -2273,7 +2330,7 @@ public class TwinParserTest {
 
     /* Tests_SRS_TWINPARSER_21_116: [The updateTwin shall add all provided properties and tags to the collection.] */
     /* Tests_SRS_TWINPARSER_21_117: [The updateTwin shall return a string with json representing the properties and tags with changes.] */
-    /* Tests_SRS_TWINPARSER_21_082: [If any `value` is null, the updateTwin shall store it but do not report on Json.] */
+    /* Tests_SRS_TWINPARSER_21_082: [If any `value` is null, the updateTwin shall delete it from the collection and report on Json.] */
     @Test
     public void updateTwinEmptyClassSucceed() throws IOException
     {
@@ -2301,35 +2358,14 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(newDesiredValues, newReportedValues, newTagsValues);
 
         // Assert
-        assertThat(json, is("{\"tags\":{" +
+        Helpers.assertJson(json, "{\"tags\":{" +
                 "\"tag1\":{\"KeyChar\":\"c\",\"KeyBool\":true,\"keyString\":\"value1\",\"keyEnum\":\"val1\",\"keyDouble\":1234.456}}," +
                 "\"properties\":{" +
                     "\"desired\":{\"key1\":\"value1\",\"key2\":1234,\"key3\":\"value3\"}," +
-                    "\"reported\":{\"key1\":\"value1\",\"key3\":\"value3\"}}}"));
+                    "\"reported\":{\"key1\":\"value1\",\"key2\":null,\"key3\":\"value3\"}}}");
 
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertTrue(result.containsKey("key2"));
-        assertNull(result.get("key2"));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(5));
-        assertThat(innerMap.get("keyString").toString(), is("value1"));
-        assertThat(Boolean.parseBoolean(innerMap.get("KeyBool").toString()), is(true));
-        assertThat(Double.parseDouble(innerMap.get("keyDouble").toString()), is(1234.456));
-        assertThat(innerMap.get("KeyChar").toString(), is("c"));
-        assertThat(myEnum.valueOf(innerMap.get("keyEnum").toString()), is(myEnum.val1));
+        newReportedValues.remove("key2");
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newTagsValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_081: [If any `key` already exists, the updateTwin shall replace the existed value by the new one.] */
@@ -2367,33 +2403,15 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(newDesiredValues, newReportedValues, newTagsValues);
 
         // Assert
-        assertThat(json, is("{\"tags\":{" +
+        Helpers.assertJson(json, "{\"tags\":{" +
                 "\"tag1\":{\"Key1\":\"newValue1\",\"KEY3\":\"value3\"}}," +
                 "\"properties\":{" +
                     "\"desired\":{\"key1\":\"newValue1\",\"key3\":\"value30\"}," +
-                    "\"reported\":{\"key1\":\"value 10.\",\"key3\":\"VALUE3\"}}}"));
+                    "\"reported\":{\"key1\":\"value 10.\",\"key3\":\"VALUE3\"}}}");
 
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value 10."));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("VALUE3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("newValue1"));
-        assertThat(result.get("key3").toString(), is("value30"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(4));
-        assertThat(innerMap.get("Key1").toString(), is("newValue1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        assertThat(innerMap.get("KEY3").toString(), is("value3"));
+        newDesiredValues.put("key7", true);
+        ((Map<String, Object>)newTagsValues.get("tag1")).put("Key2", true);
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newTagsValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_118: [If one of the provided map is null, the updateTwin shall not change that part of the collection.] */
@@ -2427,37 +2445,19 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(newDesiredValues, newReportedValues, null);
 
         // Assert
-        assertThat(json, is(
+        Helpers.assertJson(json, 
                 "{\"tags\":{}," +
                         "\"properties\":{" +
                             "\"desired\":{\"key1\":\"newValue1\",\"key3\":\"value30\"}," +
-                            "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}"));
+                            "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}");
 
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value10"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("VALUE3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("newValue1"));
-        assertThat(result.get("key3").toString(), is("value30"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        newDesiredValues.put("key7", true);
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newValues);
     }
 
 
     @Test
-    public void updateTwin_NonNullTagsSucceed() throws IOException
+    public void updateTwinNonNullTagsSucceed() throws IOException
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -2483,38 +2483,21 @@ public class TwinParserTest {
         newReportedValues.put("key3", "VALUE3");
 
         Map<String, Object> newTagsValues = new HashMap<>();
-        newTagsValues.put("key1", "newValue1");
+        newTagsValues.put("tag2", "newValue2");
 
         // Act
         String json = twinParser.updateTwin(newDesiredValues, newReportedValues, newTagsValues);
 
         // Assert
-        assertThat(json, is(
-                "{\"tags\":{\"key1\":\"newValue1\"}," +
+        Helpers.assertJson(json, 
+                "{\"tags\":{\"tag2\":\"newValue2\"}," +
                         "\"properties\":{" +
                         "\"desired\":{\"key1\":\"newValue1\",\"key3\":\"value30\"}," +
-                        "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}"));
+                        "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}");
 
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value10"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("VALUE3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("newValue1"));
-        assertThat(result.get("key3").toString(), is("value30"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        newDesiredValues.put("key7", true);
+        newValues.put("tag2", "newValue2");
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_118: [If one of the provided map is null, the updateTwin shall not change that part of the collection.] */
@@ -2529,9 +2512,9 @@ public class TwinParserTest {
         newValues.put("key2", 1234);
         newValues.put("key3", "value3");
         twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> newDesiredValues = new HashMap<>();
+        newDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(newDesiredValues);
         newValues.clear();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
         twinParser.updateTags(newValues);
@@ -2547,31 +2530,15 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(null, newReportedValues, newTagsValues);
 
         // Assert
-        assertThat(json, is("{\"tags\":{" +
+        Helpers.assertJson(json, "{\"tags\":{" +
                 "\"tag1\":{\"Key1\":\"newValue1\",\"KEY3\":\"value3\"}}," +
                 "\"properties\":{" +
                 "\"desired\":{}," +
-                "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}"));
+                "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}");
 
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value10"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("VALUE3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(4));
-        assertThat(innerMap.get("Key1").toString(), is("newValue1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        assertThat(innerMap.get("KEY3").toString(), is("value3"));
+        ((Map<String, Object>)newValues.get("tag1")).put("Key1", "newValue1");
+        ((Map<String, Object>)newValues.get("tag1")).put("KEY3", "value3");
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_118: [If one of the provided map is null, the updateTwin shall not change that part of the collection.] */
@@ -2581,12 +2548,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
+        Map<String, Object> newReportedValues = new HashMap<>();
+        newReportedValues.put("key1", "value1");
+        newReportedValues.put("key2", 1234);
+        newReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(newReportedValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
         newValues.put("key7", true);
         twinParser.updateDesiredProperty(newValues);
         newValues.clear();
@@ -2603,33 +2570,16 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(newDesiredValues, null, newTagsValues);
 
         // Assert
-        assertThat(json, is("{\"tags\":{" +
+        Helpers.assertJson(json, "{\"tags\":{" +
                 "\"tag1\":{\"Key1\":\"newValue1\",\"KEY3\":\"value3\"}}," +
                 "\"properties\":{" +
                 "\"desired\":{\"key1\":\"newValue1\",\"key3\":\"value30\"}," +
-                "\"reported\":{}}}"));
+                "\"reported\":{}}}");
 
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("newValue1"));
-        assertThat(result.get("key3").toString(), is("value30"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(4));
-        assertThat(innerMap.get("Key1").toString(), is("newValue1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        assertThat(innerMap.get("KEY3").toString(), is("value3"));
+        newDesiredValues.put("key7", true);
+        ((Map<String, Object>)newValues.get("tag1")).put("Key1", "newValue1");
+        ((Map<String, Object>)newValues.get("tag1")).put("KEY3", "value3");
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_118: [If one of the provided map is null, the updateTwin shall not change that part of the collection.] */
@@ -2639,15 +2589,15 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
+        Map<String, Object> newReportedValues = new HashMap<>();
+        newReportedValues.put("key1", "value1");
+        newReportedValues.put("key2", 1234);
+        newReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(newReportedValues);
+        Map<String, Object> newDesiredValues = new HashMap<>();
+        newDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(newDesiredValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
         twinParser.updateTags(newValues);
 
@@ -2658,31 +2608,15 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(null, null, newTagsValues);
 
         // Assert
-        assertThat(json, is("{\"tags\":{" +
+        Helpers.assertJson(json, "{\"tags\":{" +
                 "\"tag1\":{\"Key1\":\"newValue1\",\"KEY3\":\"value3\"}}," +
                 "\"properties\":{" +
                 "\"desired\":{}," +
-                "\"reported\":{}}}"));
+                "\"reported\":{}}}");
 
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(4));
-        assertThat(innerMap.get("Key1").toString(), is("newValue1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        assertThat(innerMap.get("KEY3").toString(), is("value3"));
+        ((Map<String, Object>)newValues.get("tag1")).put("Key1", "newValue1");
+        ((Map<String, Object>)newValues.get("tag1")).put("KEY3", "value3");
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_160: [If all of the provided map is null, the updateTwin shall not change the collection and throw IllegalArgumentException.] */
@@ -2692,15 +2626,15 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
+        Map<String, Object> newReportedValues = new HashMap<>();
+        newReportedValues.put("key1", "value1");
+        newReportedValues.put("key2", 1234);
+        newReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(newReportedValues);
+        Map<String, Object> newDesiredValues = new HashMap<>();
+        newDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(newDesiredValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
         twinParser.updateTags(newValues);
 
@@ -2716,24 +2650,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_119: [If no property or tags changed its value, the updateTwin shall return null.] */
@@ -2743,23 +2660,23 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
+        Map<String, Object> oldTagsValues = new HashMap<>();
+        oldTagsValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
+        twinParser.updateTags(oldTagsValues);
 
-        Map<String, Object> newDesiredValues = new HashMap<>();
-        newDesiredValues.put("key1", "value1");
-        newDesiredValues.put("key3", "value3");
         Map<String, Object> newReportedValues = new HashMap<>();
-        newReportedValues.put("key7", true);
+        newReportedValues.put("key1", "value1");
+        newReportedValues.put("key3", "value3");
+        Map<String, Object> newDesiredValues = new HashMap<>();
+        newDesiredValues.put("key7", true);
         Map<String, Object> newTagsValues = new HashMap<>();
         newTagsValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key3", "value3"); }});
 
@@ -2768,25 +2685,7 @@ public class TwinParserTest {
 
         // Assert
         assertNull(json);
-
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, oldTagsValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_128: [If one of the provided map is empty, the updateTwin shall not change its the collection.] */
@@ -2821,32 +2720,13 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(newDesiredValues, newReportedValues, newTagsValues);
 
         // Assert
-        assertThat(json, is(
+        Helpers.assertJson(json, 
                 "{\"tags\":{}," +
                         "\"properties\":{" +
                         "\"desired\":{\"key1\":\"newValue1\",\"key3\":\"value30\"}," +
-                        "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}"));
-
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value10"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("VALUE3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("newValue1"));
-        assertThat(result.get("key3").toString(), is("value30"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+                        "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}");
+        newDesiredValues.put("key7", true);
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_128: [If one of the provided map is empty, the updateTwin shall not change its the collection.] */
@@ -2880,31 +2760,15 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(newDesiredValues, newReportedValues, newTagsValues);
 
         // Assert
-        assertThat(json, is("{\"tags\":{" +
+        Helpers.assertJson(json, "{\"tags\":{" +
                 "\"tag1\":{\"Key1\":\"newValue1\",\"KEY3\":\"value3\"}}," +
                 "\"properties\":{" +
                 "\"desired\":{}," +
-                "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}"));
-
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value10"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("VALUE3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(4));
-        assertThat(innerMap.get("Key1").toString(), is("newValue1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        assertThat(innerMap.get("KEY3").toString(), is("value3"));
+                "\"reported\":{\"key1\":\"value10\",\"key3\":\"VALUE3\"}}}");
+        newDesiredValues.put("key7", true);
+        ((Map<String, Object>)newValues.get("tag1")).put("Key1", "newValue1");
+        ((Map<String, Object>)newValues.get("tag1")).put("KEY3", "value3");
+        assertTwin(twinParser, newDesiredValues, newReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_128: [If one of the provided map is empty, the updateTwin shall not change its the collection.] */
@@ -2914,12 +2778,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
         newValues.put("key7", true);
         twinParser.updateDesiredProperty(newValues);
         newValues.clear();
@@ -2937,33 +2801,15 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(newDesiredValues, newReportedValues, newTagsValues);
 
         // Assert
-        assertThat(json, is("{\"tags\":{" +
+        Helpers.assertJson(json, "{\"tags\":{" +
                 "\"tag1\":{\"Key1\":\"newValue1\",\"KEY3\":\"value3\"}}," +
                 "\"properties\":{" +
                 "\"desired\":{\"key1\":\"newValue1\",\"key3\":\"value30\"}," +
-                "\"reported\":{}}}"));
-
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("newValue1"));
-        assertThat(result.get("key3").toString(), is("value30"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(4));
-        assertThat(innerMap.get("Key1").toString(), is("newValue1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        assertThat(innerMap.get("KEY3").toString(), is("value3"));
+                "\"reported\":{}}}");
+        newDesiredValues.put("key7", true);
+        ((Map<String, Object>)newValues.get("tag1")).put("Key1", "newValue1");
+        ((Map<String, Object>)newValues.get("tag1")).put("KEY3", "value3");
+        assertTwin(twinParser, newDesiredValues, oldReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_128: [If one of the provided map is empty, the updateTwin shall not change its the collection.] */
@@ -2973,15 +2819,15 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
         twinParser.updateTags(newValues);
 
@@ -2994,31 +2840,14 @@ public class TwinParserTest {
         String json = twinParser.updateTwin(newDesiredValues, newReportedValues, newTagsValues);
 
         // Assert
-        assertThat(json, is("{\"tags\":{" +
+        Helpers.assertJson(json, "{\"tags\":{" +
                 "\"tag1\":{\"Key1\":\"newValue1\",\"KEY3\":\"value3\"}}," +
                 "\"properties\":{" +
                 "\"desired\":{}," +
-                "\"reported\":{}}}"));
-
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(4));
-        assertThat(innerMap.get("Key1").toString(), is("newValue1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        assertThat(innerMap.get("KEY3").toString(), is("value3"));
+                "\"reported\":{}}}");
+        ((Map<String, Object>)newValues.get("tag1")).put("Key1", "newValue1");
+        ((Map<String, Object>)newValues.get("tag1")).put("KEY3", "value3");
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_080: [If one of the maps is invalid, the updateTwin shall not change the collection and throw IllegalArgumentException.] */
@@ -3028,17 +2857,17 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
+        Map<String, Object> oldTagsValues = new HashMap<>();
+        oldTagsValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
+        twinParser.updateTags(oldTagsValues);
 
         Map<String, Object> newDesiredValues = new HashMap<>();
         newDesiredValues.put("key1", new int[]{1,2,3});
@@ -3062,24 +2891,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, oldTagsValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_080: [If one of the maps is invalid, the updateTwin shall not change the collection and throw IllegalArgumentException.] */
@@ -3089,17 +2901,17 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
+        Map<String, Object> oldTagsValues = new HashMap<>();
+        oldTagsValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
+        twinParser.updateTags(oldTagsValues);
 
         Map<String, Object> newDesiredValues = new HashMap<>();
         newDesiredValues.put("key1", "value1");
@@ -3123,24 +2935,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, oldTagsValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_080: [If one of the maps is invalid, the updateTwin shall not change the collection and throw IllegalArgumentException.] */
@@ -3150,17 +2945,17 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
+        Map<String, Object> oldTagsValues = new HashMap<>();
+        oldTagsValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
+        twinParser.updateTags(oldTagsValues);
 
         Map<String, Object> newDesiredValues = new HashMap<>();
         newDesiredValues.put("key1", "value1");
@@ -3184,24 +2979,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, oldTagsValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_080: [If one of the maps is invalid, the updateTwin shall not change the collection and throw IllegalArgumentException.] */
@@ -3211,17 +2989,17 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
+        Map<String, Object> oldTagsValues = new HashMap<>();
+        oldTagsValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
+        twinParser.updateTags(oldTagsValues);
 
         Map<String, Object> newDesiredValues = new HashMap<>();
         newDesiredValues.put("key1", "value1");
@@ -3245,24 +3023,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, oldTagsValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_075: [If Tags is not enable and `tagsMap` is not null, the updateTwin shall throw IOException.] */
@@ -3271,13 +3032,13 @@ public class TwinParserTest {
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
 
         Map<String, Object> newDesiredValues = new HashMap<>();
         newDesiredValues.put("key1", "value10");
@@ -3302,14 +3063,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(2));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-
-        result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key7").toString(), is("true"));
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, null);
     }
 
 
@@ -3502,7 +3256,7 @@ public class TwinParserTest {
 
         // Assert
         String resultJson = twinParser.toJson();
-        assertThat(resultJson, is(json));
+        Helpers.assertJson(resultJson, json);
     }
 
     /* Tests_SRS_TWINPARSER_21_069: [If there is no change in the Desired property, the updateTwin shall not change the reported collection and not call the OnReportedCallback.] */
@@ -3521,7 +3275,7 @@ public class TwinParserTest {
 
         // Assert
         String resultJson = twinParser.toJson();
-        assertThat(resultJson, is(json));
+        Helpers.assertJson(resultJson, json);
     }
 
     /* Tests_SRS_TWINPARSER_21_069: [If there is no change in the Desired property, the updateTwin shall not change the reported collection and not call the OnReportedCallback.] */
@@ -3539,9 +3293,9 @@ public class TwinParserTest {
 
         // Assert
         String resultJson = twinParser.toJson();
-        assertThat(resultJson, is("{\"properties\":{" +
+        Helpers.assertJson(resultJson, "{\"properties\":{" +
                 "\"desired\":{}," +
-                "\"reported\":{\"key1\":\"value1\",\"key2\":1234.124,\"key5\":\"value5\",\"key7\":true}}}"));
+                "\"reported\":{\"key1\":\"value1\",\"key2\":1234.124,\"key5\":\"value5\",\"key7\":true}}}");
     }
 
     /* Tests_SRS_TWINPARSER_21_070: [If there is no change in the Reported property, the updateTwin shall not change the reported collection and not call the OnReportedCallback.] */
@@ -3558,7 +3312,7 @@ public class TwinParserTest {
 
         // Assert
         String resultJson = twinParser.toJson();
-        assertThat(resultJson, is(json));
+        Helpers.assertJson(resultJson, json);
     }
 
     /* Tests_SRS_TWINPARSER_21_071: [If the provided json is empty, the updateTwin shall not change the collection and not call the OnDesiredCallback or the OnReportedCallback.] */
@@ -3645,7 +3399,7 @@ public class TwinParserTest {
         assertThat(twinParser.getConnectionStateUpdatedTime(), is("2015-02-28T16:24:48.789Z"));
         assertThat(twinParser.getLastActivityTime(), is("2017-02-16T21:59:56.631406Z"));
 
-        assertThat(twinParser.toJson(), is(json));
+        Helpers.assertJson(twinParser.toJson(), json);
     }
 
     @Test
@@ -3687,7 +3441,7 @@ public class TwinParserTest {
         assertThat(twinParser.getConnectionStateUpdatedTime(), is("2015-02-28T16:24:48.789Z"));
         assertThat(twinParser.getLastActivityTime(), is("2017-02-16T21:59:56.631406Z"));
 
-        assertThat(twinParser.toJson(), is(json));
+        Helpers.assertJson(twinParser.toJson(), json);
     }
 
     /* Tests_SRS_TWINPARSER_21_039: [The updateTwin shall fill the fields the properties in the TwinParser class with the keys and values provided in the json string.] */
@@ -3785,8 +3539,11 @@ public class TwinParserTest {
         assertThat(innerMap.get("innerKey1").toString(), is("value1"));
         assertThat(innerMap.get("innerKey2").toString(), is("value2"));
 
+        assertThat(twinParser.getDesiredPropertyVersion(), is(3));
+        assertThat(twinParser.getReportedPropertyVersion(), is(5));
+
         String resultJson = twinParser.toJson();
-        assertThat(resultJson, is(json));
+        Helpers.assertJson(resultJson, json);
     }
 
     /* Tests_SRS_TWINPARSER_21_172: [If the provided json contains `deviceId`, `generationId`, `etag`, `status`, `statusReason`, `statusUpdatedTime`, `connectionState`, `connectionStateUpdatedTime`, `lastActivityTime`, and `lastAcceptingIpFilterRule`, the updateTwin shall store its value.] */
@@ -3936,7 +3693,7 @@ public class TwinParserTest {
         // TODO: Test disabled with bug.
 /*
         String resultJson = twinParser.toJson();
-        assertThat(resultJson, is(json));
+        Helpers.assertJson(resultJson, json);
 */
     }
 
@@ -4047,7 +3804,7 @@ public class TwinParserTest {
         assertThat(innerMap.get("innerKey").toString(), is("value"));
 
         String resultJson = twinParser.toJson();
-        assertThat(resultJson, is(json));
+        Helpers.assertJson(resultJson, json);
     }
 
     @Test
@@ -4061,13 +3818,13 @@ public class TwinParserTest {
         twinParser.setTagsCallback(onTagsCallback);
         twinParser.enableMetadata();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
-        twinParser.updateTags(newValues);
-        newValues.clear();
-        newValues.put("key555", "value1234");
-        twinParser.updateReportedProperty(newValues);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldTagsValues = new HashMap<>();
+        oldTagsValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); put("Key3", "value3"); }});
+        twinParser.updateTags(oldTagsValues);
+        Map<String, Object> oldPropertiesValues = new HashMap<>();
+        oldPropertiesValues.put("key555", "value1234");
+        twinParser.updateReportedProperty(oldPropertiesValues);
+        twinParser.updateDesiredProperty(oldPropertiesValues);
 
         String json =
             "{" +
@@ -4147,23 +3904,7 @@ public class TwinParserTest {
         assertNull(onDesiredCallback.diff);
         assertNull(onReportedCallback.diff);
         assertNull(onTagsCallback.diff);
-
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key555").toString(), is("value1234"));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(1));
-        assertThat(result.get("key555").toString(), is("value1234"));
-
-        result = twinParser.getTagsMap();
-        assertThat(result.size(), is(1));
-        Map<String, Object> innerMap = (Map<String, Object>)result.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("true"));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
+        assertTwin(twinParser, oldPropertiesValues, oldPropertiesValues, oldTagsValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_039: [The updateTwin shall fill the fields the properties in the TwinParser class with the keys and values provided in the json string.] */
@@ -4242,7 +3983,7 @@ public class TwinParserTest {
         assertThat(onReportedCallback.diff.get("key7").toString(), is("true"));
 
         String resultJson = twinParser.toJson();
-        assertThat(resultJson, is(json));
+        Helpers.assertJson(resultJson, json);
     }
 
     /* Tests_SRS_TWINPARSER_21_040: [The updateTwin shall not change fields that is not reported in the json string.] */
@@ -4256,17 +3997,17 @@ public class TwinParserTest {
         OnDesiredCallback onDesiredCallback = new OnDesiredCallback();
         OnReportedCallback onReportedCallback = new OnReportedCallback();
         TwinParser twinParser = new TwinParser(onDesiredCallback, onReportedCallback);
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key1", "value4");
-        newValues.put("key2", 1234);
-        newValues.put("key6", "value6");
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key1", "value4");
+        oldDesiredValues.put("key2", 1234);
+        oldDesiredValues.put("key6", "value6");
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
 
         String json = "{\"properties\":{" +
                 "\"desired\":{\"key2\":9875}," +
@@ -4282,18 +4023,9 @@ public class TwinParserTest {
         assertThat(onReportedCallback.diff.size(), is(1));
         assertThat(onReportedCallback.diff.get("key1").toString(), is("value4"));
 
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(9875.0));
-        assertThat(result.get("key6").toString(), is("value6"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        oldDesiredValues.put("key2", 9875.0);
+        oldReportedValues.put("key1", "value4");
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_097: [If the provided json have any duplicated `properties` or `tags`, the updateTwin shall throw IllegalArgumentException.] */
@@ -4304,17 +4036,17 @@ public class TwinParserTest {
         OnDesiredCallback onDesiredCallback = new OnDesiredCallback();
         OnReportedCallback onReportedCallback = new OnReportedCallback();
         TwinParser twinParser = new TwinParser(onDesiredCallback, onReportedCallback);
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key1", "value4");
-        newValues.put("key2", 1234);
-        newValues.put("key6", "value6");
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key1", "value4");
+        oldDesiredValues.put("key2", 1234);
+        oldDesiredValues.put("key6", "value6");
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
 
         String json =
             "{" +
@@ -4344,18 +4076,7 @@ public class TwinParserTest {
         /**
          * Shall not change any value.
          */
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key6").toString(), is("value6"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_098: [If the provided json is properties only and contains duplicated `desired` or `reported`, the updateTwin shall throws IllegalArgumentException.] */
@@ -4366,17 +4087,17 @@ public class TwinParserTest {
         OnDesiredCallback onDesiredCallback = new OnDesiredCallback();
         OnReportedCallback onReportedCallback = new OnReportedCallback();
         TwinParser twinParser = new TwinParser(onDesiredCallback, onReportedCallback);
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key1", "value4");
-        newValues.put("key2", 1234);
-        newValues.put("key6", "value6");
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key1", "value4");
+        oldDesiredValues.put("key2", 1234);
+        oldDesiredValues.put("key6", "value6");
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
 
         String json =
                 "{" +
@@ -4406,18 +4127,7 @@ public class TwinParserTest {
         /**
          * Shall not change any value.
          */
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key6").toString(), is("value6"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_094: [If the provided json have any duplicated `key`, the updateTwin shall use the content of the last one in the String.] */
@@ -4428,17 +4138,17 @@ public class TwinParserTest {
         OnDesiredCallback onDesiredCallback = new OnDesiredCallback();
         OnReportedCallback onReportedCallback = new OnReportedCallback();
         TwinParser twinParser = new TwinParser(onDesiredCallback, onReportedCallback);
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key1", "value4");
-        newValues.put("key2", 1234);
-        newValues.put("key6", "value6");
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key1", "value4");
+        oldDesiredValues.put("key2", 1234);
+        oldDesiredValues.put("key6", "value6");
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
 
         String json =
                 "{" +
@@ -4459,18 +4169,9 @@ public class TwinParserTest {
         assertThat(onReportedCallback.diff.size(), is(1));
         assertThat(onReportedCallback.diff.get("key1").toString(), is("value4"));
 
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key6").toString(), is("value6"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        oldDesiredValues.put("key1", "value1");
+        oldReportedValues.put("key1", "value4");
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_094: [If the provided json have any duplicated `key`, the updateTwin shall use the content of the last one in the String.] */
@@ -4481,17 +4182,17 @@ public class TwinParserTest {
         OnDesiredCallback onDesiredCallback = new OnDesiredCallback();
         OnReportedCallback onReportedCallback = new OnReportedCallback();
         TwinParser twinParser = new TwinParser(onDesiredCallback, onReportedCallback);
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateReportedProperty(newValues);
-        newValues.clear();
-        newValues.put("key1", "value4");
-        newValues.put("key2", 1234);
-        newValues.put("key6", "value6");
-        newValues.put("key7", true);
-        twinParser.updateDesiredProperty(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value1");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key3", "value3");
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key1", "value4");
+        oldDesiredValues.put("key2", 1234);
+        oldDesiredValues.put("key6", "value6");
+        oldDesiredValues.put("key7", true);
+        twinParser.updateDesiredProperty(oldDesiredValues);
 
         String json = "{\"properties\":{" +
                 "\"desired\":{\"key2\":8,\"key2\":9875}," +
@@ -4507,18 +4208,9 @@ public class TwinParserTest {
         assertThat(onReportedCallback.diff.size(), is(1));
         assertThat(onReportedCallback.diff.get("key1").toString(), is("value4"));
 
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(4));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(9875.0));
-        assertThat(result.get("key6").toString(), is("value6"));
-        assertThat(result.get("key7").toString(), is("true"));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(3));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key3").toString(), is("value3"));
+        oldDesiredValues.put("key2", 9875.0);
+        oldReportedValues.put("key1", "value4");
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_041: [The updateTwin shall create a list with all properties that was updated (new key or value) by the new json.] */
@@ -4532,17 +4224,17 @@ public class TwinParserTest {
         OnDesiredCallback onDesiredCallback = new OnDesiredCallback();
         OnReportedCallback onReportedCallback = new OnReportedCallback();
         TwinParser twinParser = new TwinParser(onDesiredCallback, onReportedCallback);
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("key1", "value1");
-        newValues.put("key2", 1234);
-        newValues.put("key3", "value3");
-        twinParser.updateDesiredProperty(newValues);
-        newValues.clear();
-        newValues.put("key1", "value4");
-        newValues.put("key2", 1234);
-        newValues.put("key6", "value6");
-        newValues.put("key7", true);
-        twinParser.updateReportedProperty(newValues);
+        Map<String, Object> oldReportedValues = new HashMap<>();
+        oldReportedValues.put("key1", "value4");
+        oldReportedValues.put("key2", 1234);
+        oldReportedValues.put("key6", "value6");
+        oldReportedValues.put("key7", true);
+        twinParser.updateReportedProperty(oldReportedValues);
+        Map<String, Object> oldDesiredValues = new HashMap<>();
+        oldDesiredValues.put("key1", "value1");
+        oldDesiredValues.put("key2", 1234);
+        oldDesiredValues.put("key3", "value3");
+        twinParser.updateDesiredProperty(oldDesiredValues);
 
         String json = "{\"properties\":{" +
                 "\"desired\":{\"key3\":null,\"key1\":\"value4\"}," +
@@ -4560,15 +4252,11 @@ public class TwinParserTest {
         assertNull(onReportedCallback.diff.get("key1"));
         assertNull(onReportedCallback.diff.get("key7"));
 
-        Map<String, Object> result = twinParser.getDesiredPropertyMap();
-        assertThat(result.size(), is(2));
-        assertThat(result.get("key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-
-        result = twinParser.getReportedPropertyMap();
-        assertThat(result.size(), is(2));
-        assertThat(Double.parseDouble(result.get("key2").toString()), is(1234.0));
-        assertThat(result.get("key6").toString(), is("value6"));
+        oldDesiredValues.put("key1", "value4");
+        oldDesiredValues.remove("key3");
+        oldReportedValues.remove("key1");
+        oldReportedValues.remove("key7");
+        assertTwin(twinParser, oldDesiredValues, oldReportedValues, null);
     }
 
     /* Tests_SRS_TWINPARSER_21_043: [If the provided json is not valid, the updateTwin shall throws IllegalArgumentException.] */
@@ -4584,8 +4272,6 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateTwin(json);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_043: [If the provided json is not valid, the updateTwin shall throws IllegalArgumentException.] */
@@ -4601,8 +4287,6 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateTwin(json);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_043: [If the provided json is not valid, the updateTwin shall throws IllegalArgumentException.] */
@@ -4618,13 +4302,11 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateTwin(json);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_043: [If the provided json is not valid, the updateTwin shall throws IllegalArgumentException.] */
     @Test (expected = IllegalArgumentException.class)
-    public void updateTwinJson_InvalidKeyFailed()
+    public void updateTwinJsonInvalidKeyFailed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -4635,8 +4317,6 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateTwin(json);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_043: [If the provided json is not valid, the updateTwin shall throws IllegalArgumentException.] */
@@ -4652,13 +4332,11 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateTwin(json);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_043: [If the provided json is not valid, the updateTwin shall throws IllegalArgumentException.] */
     @Test (expected = IllegalArgumentException.class)
-    public void updateTwinJson_InvalidValueFailed()
+    public void updateTwinJsonInvalidValueFailed()
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
@@ -4669,8 +4347,19 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateTwin(json);
+    }
 
-        // Assert
+    /* Tests_SRS_TWINPARSER_21_043: [If the provided json is not valid, the updateTwin shall throws IllegalArgumentException.] */
+    @Test (expected = IllegalArgumentException.class)
+    public void updateTwinJsonNotJsonFailed()
+    {
+        // Arrange
+        TwinParser twinParser = new TwinParser();
+
+        String json = "{CreateDate\"[\u1223\\/Date(13508408267)\\/\"}";
+
+        // Act
+        twinParser.updateTwin(json);
     }
 
     /* Tests_SRS_TWINPARSER_21_074: [If Tags is not enable, the getTagsMap shall throw IOException.] */
@@ -4682,8 +4371,6 @@ public class TwinParserTest {
 
         // Act
         twinParser.getTagsMap();
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_111: [If Tags is not enable, the updateTags shall throw IOException.] */
@@ -4697,8 +4384,6 @@ public class TwinParserTest {
 
         // Act
         twinParser.updateTags(newValues);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_146: [If Tags is not enable, the resetTags shall throw IOException.] */
@@ -4712,13 +4397,10 @@ public class TwinParserTest {
 
         // Act
         twinParser.resetTags(newValues);
-
-        // Assert
     }
 
     /* Tests_SRS_TWINPARSER_21_103: [The updateTags shall add all provided tags to the collection.] */
     /* Tests_SRS_TWINPARSER_21_104: [The updateTags shall return a string with json representing the tags with changes.] */
-    /* Tests_SRS_TWINPARSER_21_052: [The getTagsMap shall return a map with all tags in the collection.] */
     /* Tests_SRS_TWINPARSER_21_157: [A valid `value` can contains sub-maps.] */
     /* Tests_SRS_TWINPARSER_21_158: [A valid `value` shall contains less than 5 levels of sub-maps.] */
     @Test
@@ -4746,43 +4428,11 @@ public class TwinParserTest {
         String json = twinParser.updateTags(newValues);
 
         // Assert
-        assertThat(json, is("{\"tag1\":{\"Key2\":1234,\"Key1\":\"value1\",\"Key3\":\"value3\"}," +
+        Helpers.assertJson(json, "{\"tag1\":{\"Key2\":1234,\"Key1\":\"value1\",\"Key3\":\"value3\"}," +
                 "\"one\":{\"two\":{\"three\":{\"four\":{\"five\":{\"tagKey\":\"value\"}}}}}," +
-                "\"tag2\":{\"Key2\":\"value5\",\"Key1\":\"value1\",\"Key4\":false}}"));
+                "\"tag2\":{\"Key2\":\"value5\",\"Key1\":\"value1\",\"Key4\":false}}");
 
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(3));
-
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
-
-        innerMap = (Map<String, Object>)tagMap.get("one");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        innerMap = (Map<String, Object>)innerMap.get("two");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        innerMap = (Map<String, Object>)innerMap.get("three");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        innerMap = (Map<String, Object>)innerMap.get("four");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        innerMap = (Map<String, Object>)innerMap.get("five");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        assertThat(innerMap.get("tagKey").toString(), is("value"));
+        assertTwin(twinParser, null, null, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_110: [If the map is invalid, the updateTags shall throw IllegalArgumentException.] */
@@ -4812,9 +4462,6 @@ public class TwinParserTest {
 
         // Act
         String json = twinParser.updateTags(newValues);
-
-        // Assert
-
     }
 
     /* Tests_SRS_TWINPARSER_21_103: [The updateTags shall add all provided tags to the collection.] */
@@ -4822,17 +4469,17 @@ public class TwinParserTest {
     /* Tests_SRS_TWINPARSER_21_107: [The updateTags shall only change tags in the map, keep the others as is.] */
     /* Tests_SRS_TWINPARSER_21_108: [All `key` and `value` in tags shall be case sensitive.] */
     /* Tests_SRS_TWINPARSER_21_114: [If any `key` already exists, the updateTags shall replace the existed value by the new one.] */
-    /* Tests_SRS_TWINPARSER_21_115: [If any `value` is null, the updateTags shall store it but do not report on Json.] */
+    /* Tests_SRS_TWINPARSER_21_115: [If any `value` is null, the updateTags shall delete it from the collection and report on Json.] */
     @Test
     public void updateTagsAddKeyChangeValueSucceed() throws IOException
     {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        newValues.put("one",
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); put("Key7", true); }});
+        oldValues.put("one",
                 new HashMap<String, Object>(){{ put("two",
                         new HashMap<String, Object>(){{ put("three",
                                 new HashMap<String, Object>(){{ put("four",
@@ -4843,9 +4490,9 @@ public class TwinParserTest {
                         }});
                 }});
         }});
-        twinParser.updateTags(newValues);
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key5", true); put("Key7", null); }});
         newValues.put("one",
@@ -4867,39 +4514,16 @@ public class TwinParserTest {
         String json = twinParser.updateTags(newValues);
 
         // Assert
-        assertThat(json, is("{\"tag1\":{\"Key1\":\"value4\"},\"one\":{\"two\":{\"three\":{\"four\":{\"FIVE\":{\"tagKey\":\"newValue\"},\"five\":{\"tagKey\":\"newValue\"}}}}},\"tag2\":{\"Key5\":true}}"));
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(3));
+        Helpers.assertJson(json, "{\"tag1\":{\"Key1\":\"value4\"},\"one\":{\"two\":{\"three\":{\"four\":{\"FIVE\":{\"tagKey\":\"newValue\"},\"five\":{\"tagKey\":\"newValue\"}}}}},\"tag2\":{\"Key5\":true,\"Key7\":null}}");
 
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value4"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
-        assertThat(innerMap.get("Key5").toString(), is("true"));
-        assertTrue(innerMap.containsKey("Key7"));
-        assertNull(innerMap.get("Key7"));
-
-        innerMap = (Map<String, Object>)tagMap.get("one");
-        assertNotNull(innerMap);
-        innerMap = (Map<String, Object>)innerMap.get("two");
-        assertNotNull(innerMap);
-        innerMap = (Map<String, Object>)innerMap.get("three");
-        assertNotNull(innerMap);
-        innerMap = (Map<String, Object>)innerMap.get("four");
-        assertNotNull(innerMap);
-        Map<String, Object> innerMap1 = (Map<String, Object>)innerMap.get("five");
-        assertNotNull(innerMap1);
-        assertThat(innerMap1.get("tagKey").toString(), is("newValue"));
-        Map<String, Object> innerMap2 = (Map<String, Object>)innerMap.get("FIVE");
-        assertNotNull(innerMap2);
-        assertThat(innerMap2.get("tagKey").toString(), is("newValue"));
+        ((Map<String, Object>)oldValues.get("tag1")).put("Key1", "value4");
+        ((Map<String, Object>)oldValues.get("tag2")).put("Key5", true);
+        ((Map<String, Object>)oldValues.get("tag2")).remove("Key7");
+        ((Map<String, Object>)((Map<String, Object>)((Map<String, Object>)((Map<String, Object>)oldValues.get("one")).get("two")).get("three")).get("four")).
+                put("five", new HashMap<String, Object>(){{ put("tagKey", "newValue"); }});
+        ((Map<String, Object>)((Map<String, Object>)((Map<String, Object>)((Map<String, Object>)oldValues.get("one")).get("two")).get("three")).get("four")).
+                put("FIVE", new HashMap<String, Object>(){{ put("tagKey", "newValue"); }});
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_114: [If any `key` already exists, the updateTags shall replace the existed value by the new one.] */
@@ -4909,10 +4533,10 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        newValues.put("one",
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        oldValues.put("one",
                 new HashMap<String, Object>(){{ put("two",
                         new HashMap<String, Object>(){{ put("three",
                                 new HashMap<String, Object>(){{ put("four",
@@ -4923,9 +4547,9 @@ public class TwinParserTest {
                                 }});
                         }});
                 }});
-        twinParser.updateTags(newValues);
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1",
                 new HashMap<String, Object>(){{
                     put("Key1",
@@ -4939,37 +4563,14 @@ public class TwinParserTest {
         String json = twinParser.updateTags(newValues);
 
         // Assert
-        assertThat(json, is("{\"tag1\":{\"Key1\":{\"innerKey2\":\"value2\",\"innerKey1\":\"value1\"}}}"));
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(3));
+        Helpers.assertJson(json, "{\"tag1\":{\"Key1\":{\"innerKey2\":\"value2\",\"innerKey1\":\"value1\"}}}");
 
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        Map<String, Object> innerMap1 = (Map<String, Object>)innerMap.get("Key1");
-        assertNotNull(innerMap1);
-        assertThat(innerMap1.size(), is(2));
-        assertThat(innerMap1.get("innerKey1").toString(), is("value1"));
-        assertThat(innerMap1.get("innerKey2").toString(), is("value2"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
-
-        innerMap = (Map<String, Object>)tagMap.get("one");
-        assertNotNull(innerMap);
-        innerMap = (Map<String, Object>)innerMap.get("two");
-        assertNotNull(innerMap);
-        innerMap = (Map<String, Object>)innerMap.get("three");
-        assertNotNull(innerMap);
-        innerMap = (Map<String, Object>)innerMap.get("four");
-        assertNotNull(innerMap);
-        innerMap = (Map<String, Object>)innerMap.get("five");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("tagKey").toString(), is("value"));
+        ((Map<String, Object>)oldValues.get("tag1")).put("Key1",
+                            new HashMap<String, Object>(){{
+                                put("innerKey1", "value1");
+                                put("innerKey2", "value2");
+                            }});
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_105: [If the provided `tagsMap` is null, the updateTags shall not change the collection and throw IllegalArgumentException.] */
@@ -4979,10 +4580,10 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
         // Act
         try
@@ -4996,18 +4597,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_106: [If no tags changed its value, the updateTags shall return null.] */
@@ -5027,18 +4617,7 @@ public class TwinParserTest {
 
         // Assert
         assertNull(json);
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, newValues);
     }
     
     /* Tests_SRS_TWINPARSER_21_109: [If the provided `tagsMap` is empty, the updateTags shall not change the collection and return null.] */
@@ -5048,29 +4627,18 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
         Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
-        newValues.clear();
 
         // Act
         String json = twinParser.updateTags(newValues);
 
         // Assert
         assertNull(json);
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_110: [If the map is invalid, the updateTags shall throw IllegalArgumentException.] */
@@ -5081,12 +4649,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put(null, true); }});
 
@@ -5102,18 +4670,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_110: [If the map is invalid, the updateTags shall throw IllegalArgumentException.] */
@@ -5124,12 +4681,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("", true); }});
 
@@ -5145,18 +4702,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
 
@@ -5168,12 +4714,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put(BIG_STRING_150CHARS, true); }});
 
@@ -5189,18 +4735,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_110: [If the map is invalid, the updateTags shall throw IllegalArgumentException.] */
@@ -5211,12 +4746,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put(ILLEGAL_STRING_DOLLAR, true); }});
 
@@ -5232,18 +4767,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_110: [If the map is invalid, the updateTags shall throw IllegalArgumentException.] */
@@ -5254,12 +4778,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put(ILLEGAL_STRING_DOT, new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key5", true); }});
 
@@ -5275,18 +4799,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_110: [If the map is invalid, the updateTags shall throw IllegalArgumentException.] */
@@ -5297,12 +4810,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put(ILLEGAL_STRING_SPACE, "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); }});
 
@@ -5318,18 +4831,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_110: [If the map is invalid, the updateTags shall throw IllegalArgumentException.] */
@@ -5340,12 +4842,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", new int[]{1,2,3}); }});
 
@@ -5361,24 +4863,13 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_140: [The resetTags shall add cleanup the tags collection and all provided tags to the tags.] */
     /* Tests_SRS_TWINPARSER_21_141: [The resetTags shall return a string with json representing the added tags.] */
     /* Tests_SRS_TWINPARSER_21_143: [The `key` and `value` in tags shall be case sensitive.] */
-    /* Tests_SRS_TWINPARSER_21_149: [If any `value` is null, the resetTags shall store it but do not report on Json.] */
+    /* Tests_SRS_TWINPARSER_21_149: [If any `value` is null, the resetTags shall delete it from the collection and report on Json.] */
     @Test
     public void resetTagsNewKeyValueSucceed() throws IOException
     {
@@ -5423,47 +4914,14 @@ public class TwinParserTest {
         String json = twinParser.resetTags(newValues);
 
         // Assert
-        assertThat(json, is("{\"tag1\":{\"Key1\":\"value4\"}," +
+        Helpers.assertJson(json, "{\"tag1\":{\"Key1\":\"value4\"}," +
                 "\"one\":{\"two\":{\"three333\":{\"four\":{" +
                         "\"FIVE\":{\"tagKey\":\"newValue\"}," +
                         "\"five\":{\"tagKey\":\"newValue\"}}}}}," +
-                "\"tag2\":{\"Key1\":\"value1\",\"Key5\":true}}"));
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(3));
+                "\"tag2\":{\"Key1\":\"value1\",\"Key5\":true,\"Key7\":null}}");
 
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        assertThat(innerMap.get("Key1").toString(), is("value4"));
-
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key5").toString(), is("true"));
-        assertTrue(innerMap.containsKey("Key7"));
-        assertNull(innerMap.get("Key7"));
-
-        innerMap = (Map<String, Object>)tagMap.get("one");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        innerMap = (Map<String, Object>)innerMap.get("two");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        innerMap = (Map<String, Object>)innerMap.get("three333");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(1));
-        innerMap = (Map<String, Object>)innerMap.get("four");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(2));
-        Map<String, Object> innerMap1 = (Map<String, Object>)innerMap.get("five");
-        assertNotNull(innerMap1);
-        assertThat(innerMap1.size(), is(1));
-        assertThat(innerMap1.get("tagKey").toString(), is("newValue"));
-        Map<String, Object> innerMap2 = (Map<String, Object>)innerMap.get("FIVE");
-        assertNotNull(innerMap2);
-        assertThat(innerMap2.size(), is(1));
-        assertThat(innerMap2.get("tagKey").toString(), is("newValue"));
+        ((Map<String, Object>)newValues.get("tag2")).remove("Key7");
+        assertTwin(twinParser, null, null, newValues);
     }
 
 
@@ -5502,30 +4960,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(3));
-
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.size(), is(3));
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(Boolean.parseBoolean(innerMap.get("Key4").toString()), is(false));
-
-        innerMap = (Map<String, Object>)tagMap.get("one");
-        innerMap = (Map<String, Object>)innerMap.get("two");
-        innerMap = (Map<String, Object>)innerMap.get("three");
-        innerMap = (Map<String, Object>)innerMap.get("four");
-        innerMap = (Map<String, Object>)innerMap.get("five");
-        assertThat(innerMap.size(), is(1));
-        assertThat(innerMap.get("tagKey").toString(), is("value"));
+        assertTwin(twinParser, null, null, newValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_144: [If the provided `tagsMap` is empty, the resetTags shall cleanup the tags collection and return `{}`.] */
@@ -5556,7 +4991,7 @@ public class TwinParserTest {
         String json = twinParser.resetTags(newValues);
 
         // Assert
-        assertThat(json, is("{}"));
+        Helpers.assertJson(json, "{}");
 
         Map<String, Object> tagMap = twinParser.getTagsMap();
         assertThat(tagMap.size(), is(0));
@@ -5570,12 +5005,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put(null, true); }});
 
@@ -5591,18 +5026,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_145: [If the map is invalid, the resetTags shall not change the collection and throw IllegalArgumentException.] */
@@ -5613,12 +5037,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("", true); }});
 
@@ -5634,18 +5058,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_145: [If the map is invalid, the resetTags shall not change the collection and throw IllegalArgumentException.] */
@@ -5656,12 +5069,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put(BIG_STRING_150CHARS, true); }});
 
@@ -5677,18 +5090,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_145: [If the map is invalid, the resetTags shall not change the collection and throw IllegalArgumentException.] */
@@ -5699,12 +5101,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put(ILLEGAL_STRING_DOLLAR, true); }});
 
@@ -5720,18 +5122,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_145: [If the map is invalid, the resetTags shall not change the collection and throw IllegalArgumentException.] */
@@ -5742,12 +5133,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put(ILLEGAL_STRING_DOT, new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key5", true); }});
 
@@ -5763,18 +5154,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_145: [If the map is invalid, the resetTags shall not change the collection and throw IllegalArgumentException.] */
@@ -5785,12 +5165,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put(ILLEGAL_STRING_SPACE, "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", true); }});
 
@@ -5806,18 +5186,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_145: [If the map is invalid, the resetTags shall not change the collection and throw IllegalArgumentException.] */
@@ -5828,12 +5197,12 @@ public class TwinParserTest {
         // Arrange
         TwinParser twinParser = new TwinParser();
         twinParser.enableTags();
-        Map<String, Object> newValues = new HashMap<>();
-        newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
-        newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
-        twinParser.updateTags(newValues);
+        Map<String, Object> oldValues = new HashMap<>();
+        oldValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", 1234); put("Key3", "value3"); }});
+        oldValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", "value5"); put("Key4", false); }});
+        twinParser.updateTags(oldValues);
 
-        newValues.clear();
+        Map<String, Object> newValues = new HashMap<>();
         newValues.put("tag1", new HashMap<String, Object>(){{ put("Key1", "value4"); }});
         newValues.put("tag2", new HashMap<String, Object>(){{ put("Key1", "value1"); put("Key2", new int[]{1,2,3}); }});
 
@@ -5849,18 +5218,7 @@ public class TwinParserTest {
         }
 
         // Assert
-        Map<String, Object> tagMap = twinParser.getTagsMap();
-        assertThat(tagMap.size(), is(2));
-        Map<String, Object> innerMap = (Map<String, Object>)tagMap.get("tag1");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(Double.parseDouble(innerMap.get("Key2").toString()), is(1234.0));
-        assertThat(innerMap.get("Key3").toString(), is("value3"));
-        innerMap = (Map<String, Object>)tagMap.get("tag2");
-        assertNotNull(innerMap);
-        assertThat(innerMap.get("Key1").toString(), is("value1"));
-        assertThat(innerMap.get("Key2").toString(), is("value5"));
-        assertThat(innerMap.get("Key4").toString(), is("false"));
+        assertTwin(twinParser, null, null, oldValues);
     }
 
     /* Tests_SRS_TWINPARSER_21_168: [The `setDeviceId` shall set the deviceId in the twin collection.] */

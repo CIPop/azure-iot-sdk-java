@@ -3,12 +3,16 @@
 
 package tests.unit.com.microsoft.azure.sdk.iot.device.transport.mqtt;
 
+import com.microsoft.azure.sdk.iot.device.DeviceClientConfig;
 import com.microsoft.azure.sdk.iot.device.IotHubSSLContext;
 import com.microsoft.azure.sdk.iot.device.Message;
+import com.microsoft.azure.sdk.iot.device.auth.IotHubSasToken;
 import com.microsoft.azure.sdk.iot.device.transport.mqtt.Mqtt;
 import com.microsoft.azure.sdk.iot.device.transport.mqtt.MqttDeviceTwin;
 import com.microsoft.azure.sdk.iot.device.transport.mqtt.MqttMessaging;
 import mockit.*;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.Before;
@@ -16,13 +20,15 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static org.junit.Assert.*;
 
 /**
  * Unit test for Mqtt class.
- * 84% methods, 84% lines covered
+ * 90% methods, 86% lines covered
  */
 public class MqttTest {
     final String serverUri = "test.host.name";
@@ -58,6 +64,13 @@ public class MqttTest {
     @Mocked
     IotHubSSLContext mockIotHubSSLContext;
 
+    @Mocked
+    protected IotHubSasToken mockSASToken;
+
+    @Mocked
+    protected DeviceClientConfig mockDeviceClientConfig;
+
+
     @Before
     public void setUp() {
         expectedMessage = new Message(expectedPayload);
@@ -79,15 +92,9 @@ public class MqttTest {
                 }
 
                 @Mock
-                String parseTopic() throws IOException
+                Pair<String, byte[]> peekMessage() throws IOException
                 {
-                    return mockParseTopic;
-                }
-
-                @Mock
-                byte[] parsePayload(String topic) throws IOException
-                {
-                    return new byte[0];
+                    return new MutablePair<>(mockParseTopic, new byte[0]);
                 }
             };
             return new MqttMessaging(serverUri, clientId, userName, password, mockIotHubSSLContext);
@@ -103,15 +110,9 @@ public class MqttTest {
                 }
 
                 @Mock
-                String parseTopic() throws IOException
+                Pair<String, byte[]> peekMessage() throws IOException
                 {
-                    return mockParseTopic;
-                }
-
-                @Mock
-                byte[] parsePayload(String topic) throws IOException
-                {
-                    return new byte[0];
+                    return new MutablePair<>(mockParseTopic, new byte[0]);
                 }
             };
             return new MqttDeviceTwin();
@@ -131,7 +132,6 @@ public class MqttTest {
                     result = mockMqttAsyncClient;
                     new MqttConnectOptions();
                     result = mockMqttConnectionOptions;
-
                 }
             };
         }
@@ -147,7 +147,6 @@ public class MqttTest {
                 mockMqttAsyncClient.connect();
                 result = mockMqttToken;
                 mockMqttToken.waitForCompletion();
-
             }
         };
     }
@@ -293,7 +292,7 @@ public class MqttTest {
     ** Tests_SRS_Mqtt_25_004: [**If an instance of the inner class MqttConnectionInfo is already created than it shall return doing nothing.**]**
      */
     @Test
-    public void manyExtendsOfAbstractClassDoesntChangeConfig() throws IOException, MqttException
+    public void manyExtendsOfAbstractClassDoesNotChangeConfig() throws IOException, MqttException
     {
         //arrange
         baseConstructorExpectations(true);
@@ -302,17 +301,17 @@ public class MqttTest {
         //act
         Mqtt mockMqtt1 = instantiateMqtt(true);
         Object actualInfoInstance1 = Deencapsulation.getField(mockMqtt1, "info");
-        ConcurrentSkipListMap<String, byte[]> actualMap1 = Deencapsulation.getField(mockMqtt1, "allReceivedMessages");
+        Queue<Pair<String, byte[]>> actualQueue1 = Deencapsulation.getField(mockMqtt1, "allReceivedMessages");
         Object actualLock1 = Deencapsulation.getField(mockMqtt1, "MQTT_LOCK");
 
         Mqtt mockMqtt2 = instantiateMqtt(false);
         Object actualInfoInstance2 = Deencapsulation.getField(mockMqtt2, "info");
-        ConcurrentSkipListMap<String, byte[]> actualMap2 = Deencapsulation.getField(mockMqtt2, "allReceivedMessages");
+        Queue<Pair<String, byte[]>> actualQueue2 = Deencapsulation.getField(mockMqtt2, "allReceivedMessages");
         Object actualLock2 = Deencapsulation.getField(mockMqtt2, "MQTT_LOCK");
 
         //assert
         assertEquals(actualInfoInstance1, actualInfoInstance2);
-        assertEquals(actualMap1, actualMap2);
+        assertEquals(actualQueue1, actualQueue2);
         assertEquals(actualLock1, actualLock2);
 
         baseConstructorVerifications(true);
@@ -326,7 +325,7 @@ public class MqttTest {
     **Tests_SRS_Mqtt_25_003: [**The constructor shall use the configuration to instantiate an instance of the inner class MqttConnectionInfo if not already created.**]**
      */
     @Test
-    public void constructorInitiliasesWithConfig() throws IOException, MqttException
+    public void constructorInitialisesWithConfig() throws IOException, MqttException
     {
         //arrange
         baseConstructorExpectations(true);
@@ -341,8 +340,8 @@ public class MqttTest {
         assertNotNull(actualAsyncClient);
         MqttConnectOptions actualConnectionOptions = Deencapsulation.getField(actualInfo, "connectionOptions");
         assertNotNull(actualConnectionOptions);
-        ConcurrentSkipListMap<String, byte[]> actualMap = Deencapsulation.getField(mockMqtt, "allReceivedMessages");
-        assertNotNull(actualMap);
+        Queue<Pair<String, byte[]>> actualQueue = Deencapsulation.getField(mockMqtt, "allReceivedMessages");
+        assertNotNull(actualQueue);
         Object actualLock = Deencapsulation.getField(mockMqtt, "MQTT_LOCK");
         assertNotNull(actualLock);
 
@@ -412,8 +411,8 @@ public class MqttTest {
         //assert
         Object actualInfoInstance = Deencapsulation.getField(mockMqtt, "info");
         assertNull(actualInfoInstance);
-        ConcurrentSkipListMap<String, byte[]> actualMap = Deencapsulation.getField(mockMqtt, "allReceivedMessages");
-        assertNull(actualMap);
+        Queue<Pair<String, byte[]>> actualQueue = Deencapsulation.getField(mockMqtt, "allReceivedMessages");
+        assertNull(actualQueue);
 
         Object actualLock = Deencapsulation.getField(mockMqtt, "MQTT_LOCK");
         assertNotNull(actualLock);
@@ -436,17 +435,17 @@ public class MqttTest {
 
         //assert
         Object actualInfoInstance1 = Deencapsulation.getField(mockMqtt1, "info");
-        ConcurrentSkipListMap<String, byte[]> actualMap1 = Deencapsulation.getField(mockMqtt1, "allReceivedMessages");
+        Queue<Pair<String, byte[]>> actualQueue1 = Deencapsulation.getField(mockMqtt1, "allReceivedMessages");
         Mqtt mockMqtt2 = instantiateMqtt(false);
         Object actualInfoInstance2 = Deencapsulation.getField(mockMqtt2, "info");
-        ConcurrentSkipListMap<String, byte[]> actualMap2 = Deencapsulation.getField(mockMqtt2, "allReceivedMessages");
+        Queue<Pair<String, byte[]>> actualQueue2 = Deencapsulation.getField(mockMqtt2, "allReceivedMessages");
 
         Object actualLock1 = Deencapsulation.getField(mockMqtt1, "MQTT_LOCK");
         Object actualLock2 = Deencapsulation.getField(mockMqtt2, "MQTT_LOCK");
 
 
         assertEquals(actualInfoInstance1, actualInfoInstance2);
-        assertEquals(actualMap1, actualMap2);
+        assertEquals(actualQueue1, actualQueue2);
         assertEquals(actualLock1, actualLock2);
 
         baseConstructorVerifications(true);
@@ -691,6 +690,31 @@ public class MqttTest {
         testCleanUp(mockMqtt);
     }
 
+    /*
+    **Tests_SRS_Mqtt_99_049: [**If the user supplied SAS token has expired, the function shall throw an IOException.**]**
+     */
+    @Test (expected = IOException.class) 
+    public void publishThrowsExceptionifUserSuppliedSASTokenHasExpired() throws IOException, MqttException
+    {
+        //arrange
+        Mqtt mockMqtt = null;
+        try
+        {
+            baseConstructorExpectations(true);
+            final byte[] payload = {0x61, 0x62, 0x63};
+           
+            mockMqtt = instantiateMqtt(true);
+            
+            //act
+            Deencapsulation.setField(mockMqtt,"userSpecifiedSASTokenExpiredOnRetry",true);
+            Deencapsulation.invoke(mockMqtt, "publish", mockParseTopic, payload);
+            
+        }
+        finally
+        {
+            testCleanUp(mockMqtt);
+        }
+    }
 
     /*
     **Tests_SRS_Mqtt_25_012: [**If the MQTT connection is closed, the function shall throw an IOException.**]**
@@ -1043,6 +1067,32 @@ public class MqttTest {
     }
 
     /*
+    **Tests_SRS_Mqtt_99_049: [**If the user supplied SAS token has expired, the function shall throw an IOException.**]**
+     */
+    @Test(expected = IOException.class)
+    public void subscribeThrowsExceptionWhenUserSuppliedSASTokenHasExpired() throws IOException, MqttException
+    {
+        //arrange
+        Mqtt mockMqtt = null;
+        try
+        {
+            baseConstructorExpectations(true);
+
+            mockMqtt = instantiateMqtt(true);
+            Deencapsulation.invoke(mockMqtt, "connect");
+
+            //act
+            Deencapsulation.setField(mockMqtt,"userSpecifiedSASTokenExpiredOnRetry",true);
+            Deencapsulation.invoke(mockMqtt, "subscribe", mockParseTopic);
+        }
+        
+        finally
+        {
+            testCleanUp(mockMqtt);
+        }
+    }
+    
+    /*
     **Tests_SRS_Mqtt_25_048: [**If the Mqtt Client Async throws MqttException for any reason, the function shall throw an IOException with the message.**]**
      */
     @Test(expected = IOException.class)
@@ -1088,19 +1138,9 @@ public class MqttTest {
         }
     }
 
-    /*
-    **Tests_SRS_Mqtt_25_021: [**This method shall call parseTopic to parse the topic from the recevived Messages queue corresponding to the messaging client's operation.**]**
-     */
-    /*
-    **Tests_SRS_Mqtt_25_023: [**This method shall call parsePayload to get the message payload from the recevived Messages queue corresponding to the messaging client's operation.**]**
-     */
-    /*
-    Tests_SRS_Mqtt_25_024: [**This method shall construct new Message with the bytes obtained from parsePayload and return the message.**]**
-     */
-    /*
-    **Test_SRS_Mqtt_34_041: [**This method shall call assignPropertiesToMessage so that all properties from the topic string can be assigned to the message**]**
-     */
-    @Test
+    // Tests_SRS_Mqtt_34_023: [This method shall call peekMessage to get the message payload from the recevived Messages queue corresponding to the messaging client's operation.]
+    // Tests_SRS_Mqtt_34_024: [This method shall construct new Message with the bytes obtained from peekMessage and return the message.]
+   @Test
     public void receiveSuccess() throws IOException, MqttException
     {
         //arrange
@@ -1110,15 +1150,9 @@ public class MqttTest {
         new MockUp<MqttMessaging>()
         {
             @Mock
-            String parseTopic() throws IOException
+            Pair<String, byte[]> peekMessage() throws IOException
             {
-                return mockParseTopic;
-            }
-
-            @Mock
-            byte[] parsePayload(String topic) throws IOException
-            {
-                return payload;
+                return new MutablePair<>(mockParseTopic, payload);
             }
         };
 
@@ -1158,9 +1192,7 @@ public class MqttTest {
         }
     }
 
-    /*
-    **Tests_SRS_Mqtt_25_022: [**If the call parseTopic returns null or empty string then this method shall do nothing and return null**]**
-     */
+    // Codes_SRS_Mqtt_34_022: [If the call peekMessage returns a null or empty string then this method shall do nothing and return null]
     @Test
     public void receiveReturnsNullMessageWhenParseTopicReturnsNull() throws IOException, MqttException
     {
@@ -1171,17 +1203,10 @@ public class MqttTest {
         new MockUp<MqttMessaging>()
         {
             @Mock
-            String parseTopic() throws IOException
+            Pair<String, byte[]> peekMessage() throws IOException
             {
-                return null;
+                return new MutablePair<>(null, payload);
             }
-
-            @Mock
-            byte[] parsePayload(String topic) throws IOException
-            {
-                return payload;
-            }
-
         };
         final Mqtt mockMqtt = new MqttMessaging(serverUri, clientId, userName, password,  mockIotHubSSLContext);
         try
@@ -1201,7 +1226,6 @@ public class MqttTest {
 
             //assert
             assertNull(receivedMessage);
-
         }
         finally
         {
@@ -1209,9 +1233,7 @@ public class MqttTest {
         }
     }
 
-    /*
-    **Tests_SRS_Mqtt_25_025: [**If the call to parsePayload returns null when topic is non-null then this method will throw IOException**]**
-     */
+    // Codes_SRS_Mqtt_34_025: [If the call to peekMessage returns null when topic is non-null then this method will throw IOException]
     @Test(expected = IOException.class)
     public void receiveThrowsIOExceptionWhenParsePayloadReturnsNull() throws IOException, MqttException
     {
@@ -1221,15 +1243,9 @@ public class MqttTest {
         new MockUp<MqttMessaging>()
         {
             @Mock
-            String parseTopic() throws IOException
+            Pair<String, byte[]> peekMessage() throws IOException
             {
-                return mockParseTopic;
-            }
-
-            @Mock
-            byte[] parsePayload(String topic) throws IOException
-            {
-                return null;
+                return new MutablePair<>(mockParseTopic, null);
             }
         };
 
@@ -1254,15 +1270,9 @@ public class MqttTest {
         new MockUp<MqttMessaging>()
         {
             @Mock
-            String parseTopic() throws IOException
+            Pair<String, byte[]> peekMessage() throws IOException
             {
-                return mockParseTopic;
-            }
-
-            @Mock
-            byte[] parsePayload(String topic) throws IOException
-            {
-                return null;
+                return new MutablePair<>(mockParseTopic, null);
             }
         };
 
@@ -1291,7 +1301,6 @@ public class MqttTest {
         try
         {
             final byte[] actualPayload = {0x61, 0x62, 0x63};
-            baseConstructorExpectations(true);
             baseConnectExpectation();
 
             new NonStrictExpectations()
@@ -1309,10 +1318,12 @@ public class MqttTest {
             mockMqtt.messageArrived(mockParseTopic, new MqttMessage(actualPayload));
 
             //assert
-            ConcurrentSkipListMap<String, byte[]> actualMap = Deencapsulation.getField(mockMqtt, "allReceivedMessages");
-            assertTrue(actualMap.containsKey(mockParseTopic));
+            Queue<Pair<String, byte[]>> actualQueue = Deencapsulation.getField(mockMqtt, "allReceivedMessages");
+            Pair<String, byte[]> messagePair = actualQueue.poll();
+            assertNotNull(messagePair);
+            assertTrue(messagePair.getKey().equals(mockParseTopic));
 
-            byte[] receivedPayload = actualMap.get(mockParseTopic);
+            byte[] receivedPayload = messagePair.getValue();
             assertTrue(actualPayload.length == receivedPayload.length);
             for (int i = 0; i < actualPayload.length; i++)
             {
@@ -1326,6 +1337,9 @@ public class MqttTest {
 
     }
 
+   /*
+    **Tests_SRS_Mqtt_99_050: [**The function shall check if SAS token has already expired.**]**
+    */
     /*
     **Tests_SRS_Mqtt_25_026: [**The function shall notify all its concrete classes by calling abstract method onReconnect at the entry of the function**]**
      */
@@ -1333,7 +1347,7 @@ public class MqttTest {
     **Tests_SRS_Mqtt_25_029: [**The function shall notify all its concrete classes by calling abstract method onReconnectComplete at the exit of the function**]**
      */
     @Test
-    public void connectionLostAttemptsToReconnect() throws IOException, MqttException
+    public void connectionLostAttemptsToReconnectWithSASTokenStillValid() throws IOException, MqttException
     {
         //arrange
         Mqtt mockMqtt = null;
@@ -1360,8 +1374,13 @@ public class MqttTest {
                     mockMqttConnectionOptions.setSocketFactory(mockIotHubSSLContext.getIotHubSSlContext().getSocketFactory());
                     mockMqttAsyncClient.isConnected();
                     result = false;
+
+                    IotHubSasToken.isSasTokenExpired(new String(mockMqttConnectionOptions.getPassword()));
+                    result = false;
+
                     mockMqttAsyncClient.isConnected();
                     result = false;
+
                     mockMqttAsyncClient.connect(mockMqttConnectionOptions);
                     result = mockMqttToken;
                     mockMqttToken.waitForCompletion();
@@ -1387,7 +1406,168 @@ public class MqttTest {
             testCleanUp(mockMqtt);
         }
     }
+    
+    /*
+     **Tests_SRS_Mqtt_99_050: [**The function shall check if SAS token has already expired.**]**
+    */
+    /*
+     **Tests_SRS_Mqtt_99_051: [**The function shall check if SAS token in based on user supplied SharedAccessKey.**]**
+    */
+     /*
+     **Tests_SRS_Mqtt_99_052: [**The function shall generate a new SAS token.**]**
+    */
+    /*
+    **Tests_SRS_Mqtt_25_026: [**The function shall notify all its concrete classes by calling abstract method onReconnect at the entry of the function**]**
+     */
+    /*
+    **Tests_SRS_Mqtt_25_029: [**The function shall notify all its concrete classes by calling abstract method onReconnectComplete at the exit of the function**]**
+    */
 
+    @Test
+    public void connectionLostAttemptsToReconnectWithUserSuppliedSharedKeyBasedSASTokenAlreadyExpired() throws IOException, MqttException
+    {
+        //arrange
+        Mqtt mockMqtt = null;
+        Throwable t = new Throwable();
+
+        try
+        {
+            new NonStrictExpectations()
+            {
+                {
+                    new MemoryPersistence();
+                    result = mockMemoryPersistence;
+                    new MqttAsyncClient(serverUri, clientId, mockMemoryPersistence);
+                    result = mockMqttAsyncClient;
+                    mockMqttAsyncClient.setCallback((Mqtt) any);
+
+                    new MqttConnectOptions();
+                    result = mockMqttConnectionOptions;
+                    mockMqttConnectionOptions.setKeepAliveInterval(anyInt);
+                    mockMqttConnectionOptions.setCleanSession(anyBoolean);
+                    mockMqttConnectionOptions.setMqttVersion(anyInt);
+                    mockMqttConnectionOptions.setUserName(anyString);
+                    mockMqttConnectionOptions.setPassword(password.toCharArray());
+                    mockMqttConnectionOptions.setSocketFactory(mockIotHubSSLContext.getIotHubSSlContext().getSocketFactory());
+                }
+            };
+
+            new StrictExpectations()
+            {
+                {
+                    mockMqttAsyncClient.isConnected();
+                    result = false;
+                    mockMqttConnectionOptions.getPassword();
+                    result = anyString.toCharArray();
+                    IotHubSasToken.isSasTokenExpired(anyString);
+                    result = true; // SAS token has expired
+                    mockDeviceClientConfig.getDeviceKey();
+                    result = anyString;
+                    mockDeviceClientConfig.getTokenValidSecs();
+                    result = anyLong;
+                }
+            };
+
+            new NonStrictExpectations()
+            {
+                {
+                    new IotHubSasToken((DeviceClientConfig)any, anyLong);
+                    result = mockSASToken;
+                }
+            };
+
+            new StrictExpectations()
+            {
+                {
+                    mockMqttConnectionOptions.setPassword((char[])any);
+                    mockMqttAsyncClient.isConnected();
+                    result = false;
+                    mockMqttAsyncClient.connect(mockMqttConnectionOptions);
+                    result = mockMqttToken;
+                    mockMqttToken.waitForCompletion();
+                    mockMqttAsyncClient.isConnected();
+                    result = true;
+                }
+            };
+
+            //act
+            try
+            {
+                mockMqtt = instantiateMqtt(true);
+                Deencapsulation.invoke(mockMqtt, "setDeviceClientConfig", mockDeviceClientConfig);
+                mockMqtt.connectionLost(t);
+            }
+            catch (Exception e)
+            {
+                System.out.print("Completed throwing exception - " + e.getCause() + e.getMessage());
+            }
+        }
+        finally
+        {
+            testCleanUp(mockMqtt);
+        }
+    }
+
+	/*
+     **Tests_SRS_Mqtt_99_050: [**The function shall check if SAS token has already expired.**]**
+    */
+	/*
+     **Tests_SRS_Mqtt_99_051: [**The function shall check if SAS token in based on user supplied SharedAccessKey.**]**
+    */
+
+    @Test(expected = IOException.class)
+    public void connectionLostAttemptsToReconnectWithUserSuppliedSASTokenAlreadyExpired() throws IOException, MqttException
+    {
+        final byte[] payload = {0x61, 0x62, 0x63};
+        //arrange
+        Mqtt mockMqtt = null;
+        Throwable t = new Throwable();
+
+        try
+        {
+            new StrictExpectations()
+            {
+                {
+                    new MemoryPersistence();
+                    result = mockMemoryPersistence;
+                    new MqttAsyncClient(serverUri, clientId, mockMemoryPersistence);
+                    result = mockMqttAsyncClient;
+                    mockMqttAsyncClient.setCallback((Mqtt) any);
+
+                    new MqttConnectOptions();
+                    result = mockMqttConnectionOptions;
+                    mockMqttConnectionOptions.setKeepAliveInterval(anyInt);
+                    mockMqttConnectionOptions.setCleanSession(anyBoolean);
+                    mockMqttConnectionOptions.setMqttVersion(anyInt);
+                    mockMqttConnectionOptions.setUserName(anyString);
+                    mockMqttConnectionOptions.setPassword(password.toCharArray());
+                    mockMqttConnectionOptions.setSocketFactory(mockIotHubSSLContext.getIotHubSSlContext().getSocketFactory());
+                    mockMqttAsyncClient.isConnected();
+                    result = false;
+
+                    IotHubSasToken.isSasTokenExpired(new String(mockMqttConnectionOptions.getPassword()));
+                    result = true; // User specified SAS token has expired
+
+                    mockDeviceClientConfig.getDeviceKey();
+                    result = null;
+
+                }
+            };
+
+            //act
+            mockMqtt = instantiateMqtt(true);
+            Deencapsulation.invoke(mockMqtt, "setDeviceClientConfig", mockDeviceClientConfig);
+            mockMqtt.connectionLost(t);
+            Deencapsulation.invoke(mockMqtt, "publish", mockParseTopic, payload);
+
+        }
+
+        finally
+        {
+            testCleanUp(mockMqtt);
+        }
+    }
+    
     /*
     **Tests_SRS_Mqtt_25_027: [**The function shall attempt to reconnect to the IoTHub in a loop with exponential backoff until it succeeds**]**
      */
@@ -1419,12 +1599,19 @@ public class MqttTest {
 
                     mockMqttAsyncClient.isConnected();
                     result = false;
+                
+                    IotHubSasToken.isSasTokenExpired(new String(mockMqttConnectionOptions.getPassword()));
+                    result = false;
+
                     mockMqttAsyncClient.isConnected();
                     result = false;
                     mockMqttAsyncClient.connect(mockMqttConnectionOptions);
                     result = mockMqttException;
 
                     mockMqttAsyncClient.isConnected();
+                    result = false;
+                    
+                    IotHubSasToken.isSasTokenExpired(new String(mockMqttConnectionOptions.getPassword()));
                     result = false;
 
                     mockMqttAsyncClient.isConnected();
@@ -1456,6 +1643,29 @@ public class MqttTest {
         }
     }
 
+    // Tests_SRS_Mqtt_34_021: [If the call peekMessage returns null then this method shall do nothing and return null]
+    @Test
+    public void receiveReturnsNullMessageIfTopicNotFound(@Mocked final IotHubSSLContext iotHubSSLContext) throws IOException
+    {
+        //can't be initialized to null, so set it as a default message
+        Message receivedMessage = new Message();
+        try
+        {
+            //arrange
+            MqttMessaging testMqttClient = new MqttMessaging("serverURI","deviceId","username","password", iotHubSSLContext);
+            Queue<Pair<String, byte[]>> testAllReceivedMessages = new ConcurrentLinkedQueue<>();
+            Deencapsulation.setField(testMqttClient, "allReceivedMessages", testAllReceivedMessages);
+
+            //act
+            receivedMessage = testMqttClient.receive();
+        }
+        finally
+        {
+            //assert
+            assertNull(receivedMessage);
+        }
+    }
+
     /*
     **Tests_SRS_Mqtt_34_051: [**If a topic string's property's key and value are not separated by the '=' symbol, an IllegalArgumentException shall be thrown**]**
      */
@@ -1465,20 +1675,13 @@ public class MqttTest {
         //arrange
         final byte[] payload = {0x61, 0x62, 0x63};
         final String mockParseTopicInvalidPropertyFormat = "devices/deviceID/messages/devicebound/%24.mid=69ea4caf-d83e-454b-81f2-caafda4c81c8&%24.exp=99999&%24.to=%2Fdevices%2FdeviceID%2Fmessages%2FdeviceBound&%24.cid=169c34b3-99b0-49f9-b0f6-8fa9d2c99345&iothub-ack=full&property1value1";
-        baseConstructorExpectations(true);
         baseConnectExpectation();
         new MockUp<MqttMessaging>()
         {
             @Mock
-            String parseTopic() throws IOException
+            Pair<String, byte[]> peekMessage()
             {
-                return mockParseTopicInvalidPropertyFormat;
-            }
-
-            @Mock
-            byte[] parsePayload(String topic) throws IOException
-            {
-                return payload;
+                return new MutablePair<>(mockParseTopicInvalidPropertyFormat, payload);
             }
         };
 
@@ -1518,15 +1721,9 @@ public class MqttTest {
         new MockUp<MqttMessaging>()
         {
             @Mock
-            String parseTopic() throws IOException
+            Pair<String, byte[]> peekMessage()
             {
-                return mockParseTopicNoCustomProperties;
-            }
-
-            @Mock
-            byte[] parsePayload(String topic) throws IOException
-            {
-                return payload;
+                return new MutablePair<>(mockParseTopicNoCustomProperties, payload);
             }
         };
 
@@ -1569,15 +1766,9 @@ public class MqttTest {
         new MockUp<MqttMessaging>()
         {
             @Mock
-            String parseTopic() throws IOException
+            Pair<String, byte[]> peekMessage()
             {
-                return mockParseTopicWithUnusualCharacters;
-            }
-
-            @Mock
-            byte[] parsePayload(String topic) throws IOException
-            {
-                return payload;
+                return new MutablePair<>(mockParseTopicWithUnusualCharacters, payload);
             }
         };
 
@@ -1617,4 +1808,55 @@ public class MqttTest {
             testCleanUp(mockMqtt);
         }
     }
+    /*
+    **Tests_SRS_Mqtt_99_049: [**If the user supplied SAS token has expired, the function shall throw an IOException.**]**
+     */
+    @Test(expected = IOException.class)
+    public void unsubscribeThrowsExceptionWhenUserSuppliedSASTokenHasExpired() throws IOException, MqttException
+    {
+        //arrange
+        Mqtt mockMqtt = null;
+        try
+        {
+            baseConstructorExpectations(true);
+            new NonStrictExpectations()
+            {
+                {
+                    mockMqttAsyncClient.isConnected();
+                    result = true;
+                }
+            };
+
+            mockMqtt = instantiateMqtt(true);
+            Deencapsulation.invoke(mockMqtt, "connect");
+
+            //act
+            Deencapsulation.setField(mockMqtt,"userSpecifiedSASTokenExpiredOnRetry",true);
+            Deencapsulation.invoke(mockMqtt, "unsubscribe", mockParseTopic);
+        }
+        
+        finally
+        {
+            testCleanUp(mockMqtt);
+        }
+    }
+   
+    /*
+    ** Codes_SRS_Mqtt_99_50: [**If deviceConfig is null, the function shall throw an IllegalArgumentException**]**
+    */
+    @Test  (expected = IllegalArgumentException.class)
+    public void deviceConfigNullThrows() throws IOException, MqttException
+    {
+        // Act
+        Mqtt mockMqtt = instantiateMqtt(true);
+
+        try
+        {
+           Deencapsulation.invoke(mockMqtt,"setDeviceClientConfig", new Class[] {DeviceClientConfig.class},(DeviceClientConfig)null);
+        }
+        finally
+        {
+            testCleanUp(mockMqtt);
+        }
+    } 
 }
